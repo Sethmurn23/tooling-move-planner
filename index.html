@@ -1,0 +1,4115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#173b35">
+<title>Tooling Move Planner</title>
+<style>
+:root {
+  --bg: #f4f6f2;
+  --surface: #ffffff;
+  --surface-soft: #f8faf7;
+  --surface-tint: #edf4f0;
+  --text: #17221f;
+  --muted: #68746f;
+  --faint: #8d9793;
+  --border: #dfe5e0;
+  --border-strong: #cbd5cf;
+  --brand: #173b35;
+  --brand-2: #235c52;
+  --brand-3: #d7a640;
+  --accent: #e6b85c;
+  --accent-soft: #fff6df;
+  --danger: #b43d3d;
+  --danger-soft: #fff0ef;
+  --warning: #9a661d;
+  --warning-soft: #fff6df;
+  --success: #287556;
+  --success-soft: #e9f7ef;
+  --info: #356b8a;
+  --info-soft: #eaf4fa;
+  --shadow-sm: 0 1px 2px rgba(18, 42, 35, 0.05);
+  --shadow-md: 0 8px 24px rgba(18, 42, 35, 0.08);
+  --shadow-lg: 0 18px 48px rgba(18, 42, 35, 0.16);
+  --radius-sm: 7px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --sidebar: 254px;
+  --header: 72px;
+  --font: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 3px solid rgba(230, 184, 92, 0.5);
+  outline-offset: 2px;
+}
+a {
+  color: inherit;
+}
+.app {
+  min-height: 100vh;
+}
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: var(--sidebar);
+  background: var(--brand);
+  color: #fff;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  transition: transform 180ms ease;
+}
+.brand {
+  height: var(--header);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: var(--brand);
+  background: var(--accent);
+  flex: 0 0 auto;
+}
+.brand-mark svg {
+  width: 21px;
+  height: 21px;
+}
+.brand-text {
+  min-width: 0;
+}
+.brand-title {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.brand-subtitle {
+  color: rgba(255,255,255,0.58);
+  font-size: 10px;
+  margin-top: 1px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.nav {
+  padding: 18px 12px;
+  overflow-y: auto;
+}
+.nav-label {
+  color: rgba(255,255,255,0.42);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0 10px;
+  margin: 8px 0;
+}
+.nav-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: rgba(255,255,255,0.74);
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-align: left;
+  padding: 10px 11px;
+  border-radius: 8px;
+  margin-bottom: 3px;
+  transition: background 140ms ease, color 140ms ease;
+}
+.nav-item:hover {
+  background: rgba(255,255,255,0.07);
+  color: #fff;
+}
+.nav-item.active {
+  background: rgba(255,255,255,0.13);
+  color: #fff;
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.nav-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+.nav-item .nav-badge {
+  margin-left: auto;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: var(--brand);
+  background: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+}
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.plan-card {
+  padding: 13px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+}
+.plan-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.plan-pill {
+  color: #ffe5a4;
+  background: rgba(230,184,92,0.15);
+  border-radius: 999px;
+  padding: 3px 7px;
+  font-size: 10px;
+}
+.progress-track {
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  width: 72%;
+  background: var(--accent);
+  border-radius: inherit;
+}
+.plan-card small {
+  display: block;
+  color: rgba(255,255,255,0.53);
+  margin-top: 7px;
+  font-size: 10px;
+}
+.main {
+  margin-left: var(--sidebar);
+  min-height: 100vh;
+}
+.topbar {
+  height: var(--header);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 18px;
+}
+.mobile-menu {
+  display: none;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 8px;
+  place-items: center;
+}
+.page-heading {
+  min-width: 0;
+}
+.page-heading h1 {
+  font-size: 19px;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+.page-heading p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.topbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.search-wrap {
+  position: relative;
+}
+.search-wrap svg {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  color: var(--faint);
+  pointer-events: none;
+}
+.search-input {
+  width: 230px;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  padding: 0 12px 0 34px;
+  color: var(--text);
+}
+.icon-button {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+.icon-button:hover {
+  background: var(--surface-tint);
+  color: var(--brand);
+}
+.notification-dot {
+  position: absolute;
+  right: 7px;
+  top: 7px;
+  width: 7px;
+  height: 7;
+  border-radius: 50%;
+  background: var(--danger);
+  border: 2px solid #fff;
+}
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+}
+.avatar {
+  width: 34px;
+  height: 34px;
+  background: var(--brand);
+  color: #fff;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 12px;
+}
+.user-meta strong,
+.user-meta span {
+  display: block;
+  line-height: 1.25;
+}
+.user-meta strong {
+  font-size: 12px;
+}
+.user-meta span {
+  color: var(--muted);
+  font-size: 10px;
+}
+.content {
+  padding: 26px 28px 40px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+.view {
+  display: none;
+  animation: fadeIn 160ms ease;
+}
+.view.active {
+  display: block;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+.section-header h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+.section-header p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.btn {
+  min-height: 38px;
+  border-radius: 8px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: transform 100ms ease, box-shadow 100ms ease, background 100ms ease;
+}
+.btn:hover {
+  background: var(--surface-soft);
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn svg {
+  width: 16px;
+  height: 16px;
+}
+.btn-primary {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+}
+.btn-primary:hover {
+  background: var(--brand-2);
+}
+.btn-accent {
+  background: var(--accent);
+  color: var(--brand);
+  border-color: var(--accent);
+}
+.btn-danger {
+  color: var(--danger);
+  border-color: #edc8c5;
+  background: var(--danger-soft);
+}
+.btn-sm {
+  min-height: 30px;
+  padding: 5px 9px;
+  font-size: 11px;
+}
+.btn-block {
+  width: 100%;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+.card-header {
+  min-height: 57px;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.card-header h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.card-header p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.card-body {
+  padding: 18px;
+}
+.card-footer {
+  padding: 13px 18px;
+  border-top: 1px solid var(--border);
+  background: var(--surface-soft);
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+  margin-bottom: 18px;
+}
+.metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 17px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+.metric-card::after {
+  content: "";
+  position: absolute;
+  right: -20px;
+  top: -22px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--surface-tint);
+}
+.metric-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  z-index: 1;
+}
+.metric-label {
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.metric-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--surface-tint);
+  color: var(--brand-2);
+}
+.metric-icon svg {
+  width: 17px;
+  height: 17px;
+}
+.metric-value {
+  position: relative;
+  z-index: 1;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  margin-top: 6px;
+}
+.metric-value small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.metric-delta {
+  position: relative;
+  z-index: 1;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.delta-up {
+  color: var(--success);
+  font-weight: 700;
+}
+.delta-warning {
+  color: var(--warning);
+  font-weight: 700;
+}
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(290px, 0.85fr);
+  gap: 18px;
+}
+.stack {
+  display: grid;
+  gap: 18px;
+}
+.table-wrap {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th {
+  text-align: left;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-soft);
+  white-space: nowrap;
+}
+td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+tr:last-child td {
+  border-bottom: 0;
+}
+tbody tr:hover {
+  background: #fbfcfa;
+}
+.cell-title {
+  font-weight: 750;
+  color: var(--text);
+}
+.cell-subtitle {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.badge-success {
+  color: var(--success);
+  background: var(--success-soft);
+}
+.badge-warning {
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+.badge-danger {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+.badge-info {
+  color: var(--info);
+  background: var(--info-soft);
+}
+.badge-neutral {
+  color: var(--muted);
+  background: #eef1ef;
+}
+.dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.schedule-list {
+  padding: 4px 18px 10px;
+}
+.schedule-item {
+  display: grid;
+  grid-template-columns: 58px 1fr auto;
+  gap: 11px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+.schedule-item:last-child {
+  border-bottom: 0;
+}
+.schedule-time {
+  color: var(--brand);
+  font-size: 12px;
+  font-weight: 800;
+}
+.schedule-date {
+  color: var(--faint);
+  font-size: 9px;
+  text-transform: uppercase;
+}
+.schedule-title {
+  font-size: 12px;
+  font-weight: 750;
+}
+.schedule-subtitle {
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 2px;
+}
+.util-item {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.util-item:last-child {
+  border-bottom: 0;
+}
+.util-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.util-name {
+  font-weight: 750;
+  font-size: 12px;
+}
+.util-value {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+.util-bar {
+  height: 7px;
+  border-radius: 999px;
+  background: #edf0ed;
+  overflow: hidden;
+}
+.util-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--success);
+}
+.util-fill.warning {
+  background: var(--accent);
+}
+.util-fill.danger {
+  background: var(--danger);
+}
+.alert-list {
+  padding: 4px 18px 10px;
+}
+.alert-item {
+  display: flex;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.alert-item:last-child {
+  border-bottom: 0;
+}
+.alert-icon {
+  width: 27px;
+  height: 27px;
+  border-radius: 7px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+}
+.alert-icon svg {
+  width: 14px;
+  height: 14px;
+}
+.alert-icon.warning {
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+.alert-icon.info {
+  color: var(--info);
+  background: var(--info-soft);
+}
+.alert-title {
+  font-size: 11px;
+  font-weight: 750;
+}
+.alert-text {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.empty-state {
+  padding: 42px 20px;
+  text-align: center;
+  color: var(--muted);
+}
+.empty-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--brand-2);
+  background: var(--surface-tint);
+}
+.empty-icon svg {
+  width: 23px;
+  height: 23px;
+}
+.empty-state h3 {
+  color: var(--text);
+  margin: 0 0 5px;
+  font-size: 14px;
+}
+.empty-state p {
+  margin: 0 auto 14px;
+  max-width: 360px;
+  font-size: 12px;
+}
+.spinner {
+  width: 25px;
+  height: 25px;
+  border: 3px solid var(--border);
+  border-top-color: var(--brand-2);
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+  margin: 0 auto 10px;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.loading-panel {
+  display: none;
+  text-align: center;
+  padding: 35px;
+  color: var(--muted);
+}
+.loading-panel.visible {
+  display: block;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+.form-grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field.full {
+  grid-column: 1 / -1;
+}
+.field label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #44514c;
+}
+.field label .optional {
+  color: var(--faint);
+  font-weight: 500;
+}
+.input,
+.select,
+.textarea {
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--text);
+  padding: 9px 10px;
+  min-height: 39px;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+.input:hover,
+.select:hover,
+.textarea:hover {
+  border-color: #aebbb4;
+}
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--brand-2);
+  box-shadow: 0 0 0 3px rgba(35,92,82,0.12);
+}
+.input[readonly] {
+  background: var(--surface-soft);
+  color: var(--muted);
+}
+.textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+.field-help {
+  font-size: 10px;
+  color: var(--muted);
+}
+.field-error {
+  font-size: 10px;
+  color: var(--danger);
+  min-height: 0;
+}
+.input.error,
+.select.error,
+.textarea.error {
+  border-color: var(--danger);
+  background: #fffafa;
+}
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.load-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+  gap: 18px;
+}
+.vehicle-options {
+  display: grid;
+  gap: 9px;
+}
+.vehicle-option {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  gap: 10px;
+  align-items: start;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.vehicle-option:hover {
+  background: var(--surface-soft);
+}
+.vehicle-option.selected {
+  border-color: var(--brand-2);
+  background: var(--surface-tint);
+}
+.vehicle-option input {
+  margin-top: 3px;
+  accent-color: var(--brand-2);
+}
+.vehicle-name {
+  font-weight: 800;
+  font-size: 12px;
+}
+.vehicle-meta {
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 3px;
+}
+.vehicle-capacity {
+  font-size: 10px;
+  color: var(--brand-2);
+  font-weight: 800;
+  text-align: right;
+}
+.load-summary {
+  padding: 18px;
+}
+.load-summary h3 {
+  margin: 0 0 14px;
+  font-size: 14px;
+}
+.summary-number {
+  font-size: 34px;
+  font-weight: 850;
+  letter-spacing: -0.05em;
+}
+.summary-number small {
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+.summary-label {
+  color: var(--muted);
+  font-size: 11px;
+}
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+.summary-row:last-child {
+  border-bottom: 0;
+}
+.summary-row span:first-child {
+  color: var(--muted);
+}
+.summary-row strong {
+  text-align: right;
+}
+.fit-status {
+  border-radius: 9px;
+  padding: 12px;
+  margin: 15px 0;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.fit-status.good {
+  color: var(--success);
+  background: var(--success-soft);
+  border: 1px solid #c6e7d4;
+}
+.fit-status.warning {
+  color: var(--warning);
+  background: var(--warning-soft);
+  border: 1px solid #f0dda9;
+}
+.fit-status.danger {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid #efc6c2;
+}
+.dimension-box {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 11px;
+  background: var(--surface-soft);
+}
+.dimension-box strong {
+  display: block;
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+.dimension-values {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dimension-values input {
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+  padding: 6px 4px;
+}
+.dimension-values span {
+  color: var(--faint);
+}
+.piece-list {
+  margin-top: 16px;
+}
+.piece-row {
+  display: grid;
+  grid-template-columns: minmax(130px, 1fr) 85px 85px 85px 75px 34px;
+  gap: 8px;
+  align-items: end;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.piece-row:last-child {
+  border-bottom: 0;
+}
+.piece-row .field label {
+  font-size: 9px;
+}
+.piece-row .input {
+  min-height: 36px;
+  padding: 7px 8px;
+}
+.remove-piece {
+  width: 34px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+}
+.remove-piece:hover {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.filter-input,
+.filter-select {
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+  padding: 0 9px;
+  color: var(--text);
+  font-size: 11px;
+}
+.filter-input {
+  width: 220px;
+}
+.toolbar-meta {
+  color: var(--muted);
+  font-size: 11px;
+}
+.timeline {
+  position: relative;
+  padding: 6px 20px 18px;
+}
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 96px;
+  top: 12px;
+  bottom: 22px;
+  width: 1px;
+  background: var(--border-strong);
+}
+.timeline-row {
+  display: grid;
+  grid-template-columns: 64px 16px 1fr;
+  gap: 16px;
+  min-height: 78px;
+  position: relative;
+}
+.timeline-time {
+  padding-top: 16px;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 800;
+}
+.timeline-date {
+  display: block;
+  color: var(--faint);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.timeline-node {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 3px solid var(--brand-2);
+  margin: 19px auto 0;
+  z-index: 1;
+}
+.timeline-node.warning {
+  border-color: var(--accent);
+}
+.timeline-node.danger {
+  border-color: var(--danger);
+}
+.timeline-card {
+  margin: 7px 0 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #fff;
+}
+.timeline-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+.timeline-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.timeline-title {
+  font-weight: 800;
+  font-size: 12px;
+}
+.timeline-meta {
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 3px;
+}
+.timeline-details {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 9px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.timeline-details span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.timeline-details svg {
+  width: 12px;
+  height: 12px;
+}
+.calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 13px;
+}
+.calendar-head h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.calendar-nav {
+  display: flex;
+  gap: 6px;
+}
+.calendar {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.calendar-week,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.calendar-week div {
+  text-align: center;
+  padding: 9px 4px;
+  color: var(--muted);
+  background: var(--surface-soft);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  border-right: 1px solid var(--border);
+}
+.calendar-week div:last-child {
+  border-right: 0;
+}
+.calendar-day {
+  min-height: 82px;
+  padding: 7px;
+  border-right: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+  background: #fff;
+}
+.calendar-day:nth-child(7n) {
+  border-right: 0;
+}
+.calendar-day-number {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  margin-bottom: 5px;
+}
+.calendar-day.other {
+  background: var(--surface-soft);
+  color: var(--faint);
+}
+.calendar-event {
+  border-radius: 5px;
+  padding: 4px 5px;
+  font-size: 8px;
+  font-weight: 800;
+  color: var(--brand);
+  background: var(--surface-tint);
+  margin-bottom: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.calendar-event.warning {
+  color: var(--warning);
+  background: var(--warning-soft);
+}
+.calendar-event.danger {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+.recommendation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.recommendation-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 17px;
+  display: flex;
+  flex-direction: column;
+}
+.rec-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.rec-icon {
+  width: 39px;
+  height: 39px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: var(--brand);
+  background: var(--accent-soft);
+}
+.rec-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.rec-title {
+  font-size: 13px;
+  font-weight: 800;
+  margin: 13px 0 4px;
+}
+.rec-description {
+  color: var(--muted);
+  font-size: 10px;
+  min-height: 45px;
+}
+.rec-price {
+  font-size: 20px;
+  font-weight: 850;
+  letter-spacing: -0.03em;
+}
+.rec-price small {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.rec-specs {
+  list-style: none;
+  margin: 13px 0;
+  padding: 11px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.rec-specs li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+.rec-specs strong {
+  color: var(--text);
+}
+.match-score {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+.match-score .util-bar {
+  flex: 1;
+}
+.match-label {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+.split-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 18px;
+}
+.side-stat {
+  padding: 15px 0;
+  border-bottom: 1px solid var(--border);
+}
+.side-stat:last-child {
+  border-bottom: 0;
+}
+.side-stat-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+  font-size: 11px;
+}
+.side-stat-top span {
+  color: var(--muted);
+}
+.side-stat strong {
+  font-size: 11px;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(12,28,24,0.48);
+  backdrop-filter: blur(2px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-backdrop.open {
+  display: flex;
+}
+.modal {
+  width: 100%;
+  max-width: 590px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  animation: modalIn 150ms ease;
+}
+.modal.small {
+  max-width: 430px;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.99); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-header {
+  padding: 19px 21px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+}
+.modal-header p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.modal-close {
+  width: 31px;
+  height: 31px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+.modal-body {
+  padding: 20px 21px;
+}
+.modal-footer {
+  padding: 14px 21px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  background: var(--surface-soft);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+.toast-region {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 200;
+  display: grid;
+  gap: 9px;
+  width: min(360px, calc(100vw - 30px));
+}
+.toast {
+  background: var(--brand);
+  color: #fff;
+  border-radius: 9px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  animation: toastIn 180ms ease;
+}
+.toast.error {
+  background: #8e3232;
+}
+.toast.warning {
+  background: #79501d;
+}
+.toast-icon {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 auto;
+}
+.toast strong {
+  display: block;
+  font-size: 11px;
+}
+.toast p {
+  margin: 2px 0 0;
+  color: rgba(255,255,255,0.78);
+  font-size: 10px;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.inline-alert {
+  display: none;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid #efc9c6;
+  font-size: 11px;
+}
+.inline-alert.visible {
+  display: block;
+}
+.mobile-overlay {
+  display: none;
+}
+.segmented {
+  display: inline-flex;
+  background: #e9eeea;
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+.segmented button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 10px;
+  font-weight: 800;
+}
+.segmented button.active {
+  background: #fff;
+  color: var(--brand);
+  box-shadow: var(--shadow-sm);
+}
+.print-only {
+  display: none;
+}
+@media (max-width: 1180px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .recommendation-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .piece-row {
+    grid-template-columns: minmax(110px, 1fr) 70px 70px 70px 64px 34px;
+  }
+}
+@media (max-width: 920px) {
+  :root {
+    --sidebar: 238px;
+  }
+  .sidebar {
+    transform: translateX(-100%);
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  .main {
+    margin-left: 0;
+  }
+  .mobile-menu {
+    display: grid;
+  }
+  .mobile-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(12,28,24,0.42);
+    z-index: 25;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms ease;
+  }
+  .mobile-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .dashboard-grid,
+  .load-layout,
+  .split-layout {
+    grid-template-columns: 1fr;
+  }
+  .search-input {
+    width: 180px;
+  }
+}
+@media (max-width: 680px) {
+  .topbar {
+    padding: 0 15px;
+  }
+  .content {
+    padding: 20px 15px 35px;
+  }
+  .search-wrap,
+  .user-meta {
+    display: none;
+  }
+  .user-chip {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .section-header {
+    flex-direction: column;
+  }
+  .section-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .metric-grid,
+  .recommendation-grid,
+  .form-grid,
+  .form-grid.three {
+    grid-template-columns: 1fr;
+  }
+  .field.full {
+    grid-column: auto;
+  }
+  .card-header,
+  .toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .toolbar .filter-group {
+    width: 100%;
+  }
+  .filter-input {
+    width: 100%;
+  }
+  .piece-row {
+    grid-template-columns: repeat(3, 1fr) 34px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+  }
+  .piece-row .piece-name {
+    grid-column: 1 / -1;
+  }
+  .piece-row .remove-piece {
+    align-self: end;
+  }
+  .schedule-item {
+    grid-template-columns: 50px 1fr;
+  }
+  .schedule-item .badge {
+    grid-column: 2;
+    justify-self: start;
+  }
+  .timeline::before {
+    left: 78px;
+  }
+  .timeline-row {
+    grid-template-columns: 46px 12px 1fr;
+    gap: 10px;
+  }
+  .calendar-day {
+    min-height: 58px;
+    padding: 5px;
+  }
+  .calendar-event {
+    font-size: 0;
+    width: 6px;
+    height: 6px;
+    padding: 0;
+    border-radius: 50%;
+  }
+}
+@media print {
+  .sidebar,
+  .topbar,
+  .section-actions,
+  .btn,
+  .toolbar {
+    display: none !important;
+  }
+  .main {
+    margin: 0;
+  }
+  .print-only {
+    display: block;
+  }
+  .card {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+  body {
+    background: #fff;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7h11v10H3z"></path>
+          <path d="M14 10h4l3 3v4h-7z"></path>
+          <circle cx="7" cy="18" r="2"></circle>
+          <circle cx="18" cy="18" r="2"></circle>
+          <path d="M6 7V4h6v3"></path>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="brand-title">Tooling Move Planner</div>
+        <div class="brand-subtitle">Operations workspace</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Workspace</div>
+      <button class="nav-item active" data-view="dashboard">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>
+        <span>Overview</span>
+      </button>
+      <button class="nav-item" data-view="planner">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"></path><path d="M8 8h8M8 12h8M8 16h5"></path></svg>
+        <span>Load Planner</span>
+      </button>
+      <button class="nav-item" data-view="schedule">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path><path d="M8 14h3v3H8z"></path></svg>
+        <span>Delivery Schedule</span>
+        <span class="nav-badge" id="scheduleBadge">4</span>
+      </button>
+      <button class="nav-item" data-view="equipment">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6l4-3 3 3-3 4"></path><path d="M17 7L9 15l-5 1 1-5 8-8"></path><path d="M3 21l6-6"></path></svg>
+        <span>Equipment</span>
+      </button>
+      <div class="nav-label">Management</div>
+      <button class="nav-item" data-view="reports">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"></path></svg>
+        <span>Reports</span>
+      </button>
+      <button class="nav-item" data-view="settings">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.6v.2h-4V21a1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 00.3-1.9A1.7 1.7 0 003 14H2.8v-4H3a1.7 1.7 0 001-1.6 1.7 1.7 0 00-.3-1.9L3.6 6.4 6.4 3.6l.1.1a1.7 1.7 0 001.9.3A1.7 1.7 0 009.9 2.4v-.2h4v.2a1.7 1.7 0 001 1.6 1.7 1.7 0 001.9-.3l.1-.1 2.8 2.8-.1.1a1.7 1.7 0 00-.3 1.9 1.7 1.7 0 001.6 1h.2v4H21a1.7 1.7 0 00-1.6 1z"></path></svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="plan-card">
+        <div class="plan-card-top">
+          <span>Operations plan</span>
+          <span class="plan-pill">PRO</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill"></div></div>
+        <small>18 of 25 active monthly loads</small>
+      </div>
+    </div>
+  </aside>
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+  <main class="main">
+    <header class="topbar">
+      <button class="mobile-menu" id="mobileMenu" aria-label="Open navigation">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+      </button>
+      <div class="page-heading">
+        <h1>Tooling Move Planner</h1>
+        <p id="headerSubtitle">Plan, load, and deliver without wasted trips.</p>
+      </div>
+      <div class="topbar-actions">
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+          <input class="search-input" id="globalSearch" type="search" placeholder="Search loads, jobs, equipment" aria-label="Search loads, jobs, and equipment">
+        </div>
+        <button class="icon-button" id="printButton" aria-label="Print current view">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        </button>
+        <button class="icon-button" id="notificationButton" aria-label="View notifications">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 00-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"></path></svg>
+          <span class="notification-dot" id="notificationDot"></span>
+        </button>
+        <div class="user-chip">
+          <div class="avatar">OM</div>
+          <div class="user-meta">
+            <strong>Operations Manager</strong>
+            <span>Northline Woodworks</span>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="content">
+      <section class="view active" id="view-dashboard" aria-labelledby="dashboardTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="dashboardTitle">Operations overview</h2>
+            <p>Your movement plan for today and upcoming deliveries.</p>
+          </div>
+          <div class="section-actions">
+            <button class="btn" id="exportDashboard">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"></path></svg>
+              Export CSV
+            </button>
+            <button class="btn btn-primary" data-open-modal="loadModal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
+              New load
+            </button>
+          </div>
+        </div>
+        <div class="metric-grid" id="dashboardMetrics"></div>
+        <div class="dashboard-grid">
+          <div class="stack">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Active loads</h3>
+                  <p>Loads planned, assigned, or in transit</p>
+                </div>
+                <button class="btn btn-sm" data-view-jump="planner">Open planner</button>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Load</th>
+                      <th>Destination</th>
+                      <th>Vehicle</th>
+                      <th>Utilization</th>
+                      <th>Status</th>
+                      <th>Scheduled</th>
+                    </tr>
+                  </thead>
+                  <tbody id="activeLoadsBody"></tbody>
+                </table>
+              </div>
+              <div id="activeLoadsEmpty"></div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Upcoming deliveries</h3>
+                  <p>Next seven days across the crew calendar</p>
+                </div>
+                <button class="btn btn-sm" data-view-jump="schedule">View schedule</button>
+              </div>
+              <div class="schedule-list" id="dashboardSchedule"></div>
+              <div id="dashboardScheduleEmpty"></div>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Vehicle utilization</h3>
+                  <p>Current capacity by assigned vehicle</p>
+                </div>
+              </div>
+              <div id="vehicleUtilization"></div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Action needed</h3>
+                  <p>Operational issues to resolve</p>
+                </div>
+              </div>
+              <div class="alert-list" id="dashboardAlerts"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="view" id="view-planner" aria-labelledby="plannerTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="plannerTitle">Load planner</h2>
+            <p>Check dimensions and weight before assigning a vehicle or trailer.</p>
+          </div>
+          <div class="section-actions">
+            <button class="btn" id="clearPlanner">Clear planner</button>
+            <button class="btn btn-primary" id="saveLoadPlan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h12l2 2v14H5z"></path><path d="M8 4v6h8V4M8 20v-6h8v6"></path></svg>
+              Save load plan
+            </button>
+          </div>
+        </div>
+        <div class="load-layout">
+          <div class="stack">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Load details</h3>
+                  <p>Define where the materials are going and what they weigh</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="inline-alert" id="plannerError"></div>
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="loadJob">Job / work order</label>
+                    <input class="input" id="loadJob" type="text" placeholder="e.g. Maple Street Kitchen">
+                    <span class="field-error" id="loadJobError"></span>
+                  </div>
+                  <div class="field">
+                    <label for="loadDestination">Destination site</label>
+                    <input class="input" id="loadDestination" type="text" placeholder="e.g. 1840 Maple St">
+                    <span class="field-error" id="loadDestinationError"></span>
+                  </div>
+                  <div class="field">
+                    <label for="loadDate">Delivery date</label>
+                    <input class="input" id="loadDate" type="date">
+                    <span class="field-error" id="loadDateError"></span>
+                  </div>
+                  <div class="field">
+                    <label for="loadTime">Pickup / delivery time</label>
+                    <input class="input" id="loadTime" type="time">
+                    <span class="field-error" id="loadTimeError"></span>
+                  </div>
+                  <div class="field">
+                    <label for="loadPriority">Priority</label>
+                    <select class="select" id="loadPriority">
+                      <option value="standard">Standard</option>
+                      <option value="urgent">Urgent</option>
+                      <option value="low">Low priority</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="loadDriver">Assigned driver</label>
+                    <select class="select" id="loadDriver">
+                      <option value="">Unassigned</option>
+                      <option value="Marcus Lee">Marcus Lee</option>
+                      <option value="Elena Ruiz">Elena Ruiz</option>
+                      <option value="Sam Wilson">Sam Wilson</option>
+                    </select>
+                  </div>
+                  <div class="field full">
+                    <label for="loadNotes">Move notes <span class="optional">(optional)</span></label>
+                    <textarea class="textarea" id="loadNotes" placeholder="Access instructions, unloading order, special handling notes"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Materials</h3>
+                  <p>Add each board, case, machine, or equipment piece</p>
+                </div>
+                <button class="btn btn-sm" id="addPiece">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
+                  Add item
+                </button>
+              </div>
+              <div class="card-body">
+                <div class="piece-list" id="pieceList"></div>
+                <div id="pieceEmpty"></div>
+              </div>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Vehicle or trailer</h3>
+                  <p>Compare against usable cargo space</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="vehicle-options" id="vehicleOptions"></div>
+              </div>
+            </div>
+            <div class="card load-summary" id="loadSummary"></div>
+          </div>
+        </div>
+      </section>
+      <section class="view" id="view-schedule" aria-labelledby="scheduleTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="scheduleTitle">Delivery schedule</h2>
+            <p>Coordinate site access, crew availability, and material arrivals.</p>
+          </div>
+          <div class="section-actions">
+            <div class="segmented" id="scheduleMode">
+              <button class="active" data-schedule-mode="timeline">Timeline</button>
+              <button data-schedule-mode="calendar">Calendar</button>
+            </div>
+            <button class="btn btn-primary" data-open-modal="deliveryModal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
+              Add delivery
+            </button>
+          </div>
+        </div>
+        <div class="split-layout">
+          <div class="card" id="scheduleTimelineCard">
+            <div class="card-header">
+              <div>
+                <h3 id="scheduleRangeTitle">Upcoming timeline</h3>
+                <p>Deliveries sorted by date and pickup time</p>
+              </div>
+              <div class="toolbar-meta" id="scheduleCount"></div>
+            </div>
+            <div class="timeline" id="scheduleTimeline"></div>
+            <div id="scheduleEmpty"></div>
+          </div>
+          <div class="stack">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3 id="miniCalendarTitle">This month</h3>
+                  <p>Delivery overview</p>
+                </div>
+                <div class="calendar-nav">
+                  <button class="icon-button" id="calendarPrev" aria-label="Previous month" style="width:30px;height:30px">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"></path></svg>
+                  </button>
+                  <button class="icon-button" id="calendarNext" aria-label="Next month" style="width:30px;height:30px">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"></path></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="calendar">
+                  <div class="calendar-week">
+                    <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+                  </div>
+                  <div class="calendar-grid" id="miniCalendarGrid"></div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Crew availability</h3>
+                  <p>Assignments for upcoming moves</p>
+                </div>
+              </div>
+              <div class="card-body" id="crewAvailability"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" id="scheduleCalendarCard" style="display:none">
+          <div class="card-header">
+            <div>
+              <h3 id="fullCalendarTitle">Monthly calendar</h3>
+              <p>Click a delivery to inspect details</p>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="calendar">
+              <div class="calendar-week">
+                <div>Sunday</div><div>Monday</div><div>Tuesday</div><div>Wednesday</div><div>Thursday</div><div>Friday</div><div>Saturday</div>
+              </div>
+              <div class="calendar-grid" id="fullCalendarGrid"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="view" id="view-equipment" aria-labelledby="equipmentTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="equipmentTitle">Equipment & transfers</h2>
+            <p>Match loads to owned gear, rentals, and transfers between job sites.</p>
+          </div>
+          <div class="section-actions">
+            <button class="btn" id="compareEquipment">Compare selected</button>
+            <button class="btn btn-primary" data-open-modal="equipmentModal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg>
+              Request equipment
+            </button>
+          </div>
+        </div>
+        <div class="metric-grid" id="equipmentMetrics"></div>
+        <div class="recommendation-grid" id="equipmentRecommendations"></div>
+        <div class="card" style="margin-top:18px">
+          <div class="card-header">
+            <div>
+              <h3>Equipment inventory</h3>
+              <p>Owned equipment and active rental reservations</p>
+            </div>
+            <div class="segmented" id="equipmentFilter">
+              <button class="active" data-equipment-filter="all">All</button>
+              <button data-equipment-filter="owned">Owned</button>
+              <button data-equipment-filter="rental">Rental</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Equipment</th>
+                  <th>Type</th>
+                  <th>Location</th>
+                  <th>Capacity</th>
+                  <th>Availability</th>
+                  <th>Daily rate</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="equipmentTableBody"></tbody>
+            </table>
+          </div>
+          <div id="equipmentEmpty"></div>
+        </div>
+      </section>
+      <section class="view" id="view-reports" aria-labelledby="reportsTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="reportsTitle">Movement reports</h2>
+            <p>Measure load efficiency, delivery performance, and equipment spend.</p>
+          </div>
+          <div class="section-actions">
+            <button class="btn" id="exportReport">Export report</button>
+          </div>
+        </div>
+        <div class="metric-grid" id="reportMetrics"></div>
+        <div class="split-layout">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>Monthly load efficiency</h3>
+                <p>Average cargo-space utilization by week</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="efficiencyChart"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>Performance summary</h3>
+                <p>Calculated from saved movement data</p>
+              </div>
+            </div>
+            <div class="card-body" id="performanceSummary"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <div class="card-header">
+            <div>
+              <h3>Movement history</h3>
+              <p>Saved load plans and scheduled delivery outcomes</p>
+            </div>
+            <button class="btn btn-sm" id="printReport">Print</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Job</th>
+                  <th>Vehicle</th>
+                  <th>Weight</th>
+                  <th>Space used</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="reportTableBody"></tbody>
+            </table>
+          </div>
+          <div id="reportEmpty"></div>
+        </div>
+      </section>
+      <section class="view" id="view-settings" aria-labelledby="settingsTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="settingsTitle">Workspace settings</h2>
+            <p>Manage company details, defaults, and locally stored data.</p>
+          </div>
+        </div>
+        <div class="split-layout">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>Company profile</h3>
+                <p>Used in exported plans and delivery notes</p>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="inline-alert" id="settingsError"></div>
+              <form id="settingsForm">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="companyName">Company name</label>
+                    <input class="input" id="companyName" type="text" required>
+                    <span class="field-error" id="companyNameError"></span>
+                  </div>
+                  <div class="field">
+                    <label for="companyPhone">Operations phone</label>
+                    <input class="input" id="companyPhone" type="tel">
+                  </div>
+                  <div class="field full">
+                    <label for="companyAddress">Business address</label>
+                    <input class="input" id="companyAddress" type="text">
+                  </div>
+                  <div class="field">
+                    <label for="defaultDriver">Default driver</label>
+                    <select class="select" id="defaultDriver">
+                      <option value="">None</option>
+                      <option value="Marcus Lee">Marcus Lee</option>
+                      <option value="Elena Ruiz">Elena Ruiz</option>
+                      <option value="Sam Wilson">Sam Wilson</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="defaultVehicle">Default vehicle</label>
+                    <select class="select" id="defaultVehicle"></select>
+                  </div>
+                  <div class="field">
+                    <label for="distanceUnit">Distance unit</label>
+                    <select class="select" id="distanceUnit">
+                      <option value="mi">Miles</option>
+                      <option value="km">Kilometers</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="weekStart">Week starts on</label>
+                    <select class="select" id="weekStart">
+                      <option value="sunday">Sunday</option>
+                      <option value="monday">Monday</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button class="btn btn-primary" type="submit">Save settings</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Planner preferences</h3>
+                  <p>Safety and capacity thresholds</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="field">
+                  <label for="weightThreshold">Weight warning threshold</label>
+                  <select class="select" id="weightThreshold">
+                    <option value="80">80% of vehicle rating</option>
+                    <option value="85">85% of vehicle rating</option>
+                    <option value="90">90% of vehicle rating</option>
+                    <option value="95">95% of vehicle rating</option>
+                  </select>
+                </div>
+                <div class="field" style="margin-top:14px">
+                  <label for="spaceThreshold">Space warning threshold</label>
+                  <select class="select" id="spaceThreshold">
+                    <option value="80">80% of usable space</option>
+                    <option value="85">85% of usable space</option>
+                    <option value="90">90% of usable space</option>
+                    <option value="95">95% of usable space</option>
+                  </select>
+                </div>
+                <div class="form-actions">
+                  <button class="btn" id="saveThresholds">Save thresholds</button>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Local data</h3>
+                  <p>This app stores everything in this browser</p>
+                </div>
+              </div>
+              <div class="card-body">
+                <p style="font-size:11px;color:var(--muted);margin-top:0">Download a backup or reset the workspace. Resetting cannot be undone.</p>
+                <div class="form-actions" style="justify-content:flex-start">
+                  <button class="btn" id="backupData">Download backup</button>
+                  <button class="btn btn-danger" id="resetData">Reset all data</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+<div class="modal-backdrop" id="loadModal" role="dialog" aria-modal="true" aria-labelledby="loadModalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="loadModalTitle">New load</h2>
+        <p>Start with the job details. You can add materials next.</p>
+      </div>
+      <button class="modal-close" data-close-modal aria-label="Close dialog">×</button>
+    </div>
+    <form id="quickLoadForm">
+      <div class="modal-body">
+        <div class="inline-alert" id="quickLoadError"></div>
+        <div class="form-grid">
+          <div class="field full">
+            <label for="quickJob">Job / work order</label>
+            <input class="input" id="quickJob" type="text" required placeholder="e.g. Oakview Bathroom">
+            <span class="field-error" id="quickJobError"></span>
+          </div>
+          <div class="field full">
+            <label for="quickDestination">Destination site</label>
+            <input class="input" id="quickDestination" type="text" required placeholder="Street address">
+            <span class="field-error" id="quickDestinationError"></span>
+          </div>
+          <div class="field">
+            <label for="quickDate">Delivery date</label>
+            <input class="input" id="quickDate" type="date" required>
+            <span class="field-error" id="quickDateError"></span>
+          </div>
+          <div class="field">
+            <label for="quickTime">Pickup time</label>
+            <input class="input" id="quickTime" type="time" required value="08:00">
+          </div>
+          <div class="field full">
+            <label for="quickMaterial">Material summary <span class="optional">(optional)</span></label>
+            <input class="input" id="quickMaterial" type="text" placeholder="e.g. 12 cabinet boxes, 6 sheets plywood">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" type="button" data-close-modal>Cancel</button>
+        <button class="btn btn-primary" type="submit">Create & plan load</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="modal-backdrop" id="deliveryModal" role="dialog" aria-modal="true" aria-labelledby="deliveryModalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="deliveryModalTitle">Add delivery</h2>
+        <p>Create a site delivery and assign a crew member.</p>
+      </div>
+      <button class="modal-close" data-close-modal aria-label="Close dialog">×</button>
+    </div>
+    <form id="deliveryForm">
+      <div class="modal-body">
+        <div class="inline-alert" id="deliveryError"></div>
+        <div class="form-grid">
+          <div class="field full">
+            <label for="deliveryJob">Job / work order</label>
+            <input class="input" id="deliveryJob" type="text" required placeholder="Project name">
+            <span class="field-error" id="deliveryJobError"></span>
+          </div>
+          <div class="field full">
+            <label for="deliveryAddress">Site address</label>
+            <input class="input" id="deliveryAddress" type="text" required placeholder="Delivery address">
+            <span class="field-error" id="deliveryAddressError"></span>
+          </div>
+          <div class="field">
+            <label for="deliveryDate">Delivery date</label>
+            <input class="input" id="deliveryDate" type="date" required>
+            <span class="field-error" id="deliveryDateError"></span>
+          </div>
+          <div class="field">
+            <label for="deliveryTime">Time</label>
+            <input class="input" id="deliveryTime" type="time" required value="09:00">
+          </div>
+          <div class="field">
+            <label for="deliveryCrew">Crew member</label>
+            <select class="select" id="deliveryCrew">
+              <option value="">Unassigned</option>
+              <option value="Marcus Lee">Marcus Lee</option>
+              <option value="Elena Ruiz">Elena Ruiz</option>
+              <option value="Sam Wilson">Sam Wilson</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="deliveryMaterial">Material</label>
+            <input class="input" id="deliveryMaterial" type="text" placeholder="e.g. Finish samples">
+          </div>
+          <div class="field full">
+            <label for="deliveryNotes">Site notes <span class="optional">(optional)</span></label>
+            <textarea class="textarea" id="deliveryNotes" placeholder="Gate codes, access windows, site contact"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" type="button" data-close-modal>Cancel</button>
+        <button class="btn btn-primary" type="submit">Add to schedule</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="modal-backdrop" id="equipmentModal" role="dialog" aria-modal="true" aria-labelledby="equipmentModalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="equipmentModalTitle">Request equipment</h2>
+        <p>Record a rental or transfer request for this workspace.</p>
+      </div>
+      <button class="modal-close" data-close-modal aria-label="Close dialog">×</button>
+    </div>
+    <form id="equipmentForm">
+      <div class="modal-body">
+        <div class="inline-alert" id="equipmentError"></div>
+        <div class="form-grid">
+          <div class="field full">
+            <label for="requestEquipment">Equipment</label>
+            <select class="select" id="requestEquipment" required></select>
+          </div>
+          <div class="field">
+            <label for="requestType">Request type</label>
+            <select class="select" id="requestType" required>
+              <option value="rental">Rental</option>
+              <option value="transfer">Site-to-site transfer</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="requestDate">Needed date</label>
+            <input class="input" id="requestDate" type="date" required>
+          </div>
+          <div class="field full">
+            <label for="requestLocation">Deliver to / transfer from</label>
+            <input class="input" id="requestLocation" type="text" required placeholder="Job site or warehouse address">
+          </div>
+          <div class="field full">
+            <label for="requestNotes">Notes <span class="optional">(optional)</span></label>
+            <textarea class="textarea" id="requestNotes" placeholder="Operator requirements or transfer details"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" type="button" data-close-modal>Cancel</button>
+        <button class="btn btn-primary" type="submit">Submit request</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div class="modal-backdrop" id="notificationPanel" role="dialog" aria-modal="true" aria-labelledby="notificationTitle">
+  <div class="modal small">
+    <div class="modal-header">
+      <div>
+        <h2 id="notificationTitle">Notifications</h2>
+        <p>Updates requiring operational attention</p>
+      </div>
+      <button class="modal-close" data-close-modal aria-label="Close dialog">×</button>
+    </div>
+    <div class="modal-body" id="notificationList"></div>
+    <div class="modal-footer">
+      <button class="btn" id="markNotificationsRead">Mark all read</button>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+  <div class="modal small">
+    <div class="modal-header">
+      <div>
+        <h2 id="confirmTitle">Confirm action</h2>
+        <p id="confirmMessage">This action cannot be undone.</p>
+      </div>
+      <button class="modal-close" data-close-modal aria-label="Close dialog">×</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-close-modal>Cancel</button>
+      <button class="btn btn-danger" id="confirmAction">Confirm</button>
+    </div>
+  </div>
+</div>
+<div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+<script>
+"use strict";
+const STORAGE_KEY = "toolingMovePlannerStateV1";
+const VIEWS = ["dashboard", "planner", "schedule", "equipment", "reports", "settings"];
+const DRIVERS = ["Marcus Lee", "Elena Ruiz", "Sam Wilson"];
+const dayMs = 86400000;
+
+function isoDate(date) {
+  const d = date instanceof Date ? date : new Date(date);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function addDays(date, days) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function startOfDay(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function formatDate(dateValue, options = {}) {
+  if (!dateValue) return "No date";
+  const d = new Date(`${dateValue}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return dateValue;
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: options.year ? "numeric" : undefined
+  });
+}
+
+function formatLongDate(dateValue) {
+  if (!dateValue) return "No date";
+  const d = new Date(`${dateValue}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return dateValue;
+  return d.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric"
+  });
+}
+
+function formatTime(timeValue) {
+  if (!timeValue) return "—";
+  const [h, m] = timeValue.split(":").map(Number);
+  const d = new Date();
+  d.setHours(h || 0, m || 0, 0, 0);
+  return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function uid(prefix = "id") {
+  return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function deepCopy(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function getDefaultState() {
+  const today = startOfDay(new Date());
+  const vehicles = [
+    {
+      id: "v_ram",
+      name: "2024 Ram ProMaster 2500",
+      type: "Cargo van",
+      location: "Main warehouse",
+      maxWeight: 3500,
+      maxVolume: 487,
+      maxLength: 105,
+      maxWidth: 77,
+      maxHeight: 74,
+      rate: 0,
+      available: true
+    },
+    {
+      id: "v_box",
+      name: "16 ft Box Truck",
+      type: "Box truck",
+      location: "Main warehouse",
+      maxWeight: 6500,
+      maxVolume: 960,
+      maxLength: 192,
+      maxWidth: 96,
+      maxHeight: 103,
+      rate: 0,
+      available: true
+    },
+    {
+      id: "v_pickup",
+      name: "Crew Cab Pickup + Utility Trailer",
+      type: "Pickup & trailer",
+      location: "North warehouse",
+      maxWeight: 4200,
+      maxVolume: 420,
+      maxLength: 144,
+      maxWidth: 65,
+      maxHeight: 58,
+      rate: 65,
+      available: true
+    },
+    {
+      id: "v_forklift",
+      name: "10k Forklift Rental",
+      type: "Rental",
+      location: "Regional rental partner",
+      maxWeight: 10000,
+      maxVolume: 720,
+      maxLength: 168,
+      maxWidth: 84,
+      maxHeight: 96,
+      rate: 385,
+      available: true
+    },
+    {
+      id: "v_lift",
+      name: "Scissor Lift Rental",
+      type: "Rental",
+      location: "Regional rental partner",
+      maxWeight: 2500,
+      maxVolume: 210,
+      maxLength: 84,
+      maxWidth: 70,
+      maxHeight: 36,
+      rate: 295,
+      available: true
+    }
+  ];
+  const equipment = [
+    {
+      id: "eq_table_saw",
+      name: "SawStop 10-inch Table Saw",
+      type: "Table saw",
+      source: "owned",
+      location: "Main warehouse",
+      capacity: "400 lb",
+      dailyRate: 0,
+      status: "available",
+      dimensions: { length: 36, width: 32, height: 34 },
+      weight: 400
+    },
+    {
+      id: "eq_planer",
+      name: "DeWalt 12-inch Planer",
+      type: "Thickness planer",
+      source: "owned",
+      location: "North warehouse",
+      capacity: "100 lb",
+      dailyRate: 0,
+      status: "transfer",
+      dimensions: { length: 29, width: 21, height: 20 },
+      weight: 100
+    },
+    {
+      id: "eq_lift",
+      name: "Genie GS-1930 Scissor Lift",
+      type: "Access equipment",
+      source: "rental",
+      location: "Regional rental partner",
+      capacity: "500 lb platform",
+      dailyRate: 295,
+      status: "available",
+      dimensions: { length: 84, width: 30, height: 36 },
+      weight: 1590
+    },
+    {
+      id: "eq_forklift",
+      name: "10,000 lb Forklift",
+      type: "Material handling",
+      source: "rental",
+      location: "Regional rental partner",
+      capacity: "10,000 lb",
+      dailyRate: 385,
+      status: "available",
+      dimensions: { length: 168, width: 84, height: 96 },
+      weight: 13800
+    },
+    {
+      id: "eq_miter",
+      name: "Sliding Compound Miter Saw",
+      type: "Portable saw",
+      source: "owned",
+      location: "Main warehouse",
+      capacity: "Portable",
+      dailyRate: 0,
+      status: "available",
+      dimensions: { length: 28, width: 20, height: 20 },
+      weight: 53
+    },
+    {
+      id: "eq_dust",
+      name: "Dust Collection System",
+      type: "Dust collection",
+      source: "owned",
+      location: "North warehouse",
+      capacity: "1.5 gal",
+      dailyRate: 0,
+      status: "maintenance",
+      dimensions: { length: 42, width: 30, height: 54 },
+      weight: 210
+    }
+  ];
+  const loads = [
+    {
+      id: "load_seed_1",
+      job: "Maple Street Kitchen",
+      destination: "1840 Maple St",
+      date: isoDate(today),
+      time: "08:00",
+      priority: "urgent",
+      driver: "Marcus Lee",
+      vehicleId: "v_box",
+      materialSummary: "Cabinet boxes and plywood",
+      notes: "Unload cases first. Use rear gate.",
+      pieces: [
+        { id: "p1", name: "Base cabinet cases", length: 36, width: 24, height: 34, weight: 180, quantity: 8 },
+        { id: "p2", name: "Birch plywood sheets", length: 97, width: 48, height: 0.75, weight: 52, quantity: 12 }
+      ],
+      status: "planned",
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: "load_seed_2",
+      job: "Oakview Bathroom",
+      destination: "72 Oakview Ave",
+      date: isoDate(today),
+      time: "11:30",
+      priority: "standard",
+      driver: "Elena Ruiz",
+      vehicleId: "v_ram",
+      materialSummary: "Vanities and trim",
+      notes: "Call site contact on arrival.",
+      pieces: [
+        { id: "p3", name: "Double vanity", length: 62, width: 22, height: 32, weight: 220, quantity: 1 },
+        { id: "p4", name: "Trim bundles", length: 144, width: 8, height: 6, weight: 95, quantity: 4 }
+      ],
+      status: "assigned",
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: "load_seed_3",
+      job: "Cedar Ridge Offices",
+      destination: "909 Cedar Ridge Blvd",
+      date: isoDate(addDays(today, 1)),
+      time: "07:30",
+      priority: "standard",
+      driver: "Sam Wilson",
+      vehicleId: "v_pickup",
+      materialSummary: "Desk panels and chairs",
+      notes: "Loading dock access after 7 AM.",
+      pieces: [
+        { id: "p5", name: "Desk panels", length: 60, width: 30, height: 3, weight: 70, quantity: 8 },
+        { id: "p6", name: "Chair cartons", length: 38, width: 24, height: 36, weight: 60, quantity: 5 }
+      ],
+      status: "assigned",
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: "load_seed_4",
+      job: "Willow Creek Millwork",
+      destination: "14 Willow Creek Rd",
+      date: isoDate(addDays(today, 2)),
+      time: "13:00",
+      priority: "standard",
+      driver: "",
+      vehicleId: "v_box",
+      materialSummary: "Architectural millwork",
+      notes: "Crane may be required.",
+      pieces: [
+        { id: "p7", name: "Millwork panels", length: 108, width: 54, height: 8, weight: 285, quantity: 6 }
+      ],
+      status: "planned",
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: "load_seed_5",
+      job: "Harbor Loft",
+      destination: "305 Harbor Way",
+      date: isoDate(addDays(today, 3)),
+      time: "09:15",
+      priority: "standard",
+      driver: "Marcus Lee",
+      vehicleId: "v_ram",
+      materialSummary: "Built-in shelving",
+      notes: "",
+      pieces: [
+        { id: "p8", name: "Shelving units", length: 72, width: 16, height: 84, weight: 175, quantity: 5 }
+      ],
+      status: "planned",
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: "load_seed_6",
+      job: "Parkside Library",
+      destination: "22 Parkside Plaza",
+      date: isoDate(addDays(today, 5)),
+      time: "10:00",
+      priority: "low",
+      driver: "Elena Ruiz",
+      vehicleId: "v_pickup",
+      materialSummary: "Counter sections",
+      notes: "Deliver before public opening.",
+      pieces: [
+        { id: "p9", name: "Counter sections", length: 96, width: 30, height: 36, weight: 310, quantity: 2 }
+      ],
+      status: "planned",
+      createdAt: new Date().toISOString()
+    }
+  ];
+  const deliveries = [
+    {
+      id: "del_seed_1",
+      job: "Maple Street Kitchen",
+      address: "1840 Maple St",
+      date: isoDate(today),
+      time: "08:00",
+      crew: "Marcus Lee",
+      material: "Cabinet cases and plywood",
+      notes: "Use rear gate",
+      status: "scheduled"
+    },
+    {
+      id: "del_seed_2",
+      job: "Oakview Bathroom",
+      address: "72 Oakview Ave",
+      date: isoDate(today),
+      time: "11:30",
+      crew: "Elena Ruiz",
+      material: "Vanities and trim",
+      notes: "Call on arrival",
+      status: "scheduled"
+    },
+    {
+      id: "del_seed_3",
+      job: "Cedar Ridge Offices",
+      address: "909 Cedar Ridge Blvd",
+      date: isoDate(addDays(today, 1)),
+      time: "07:30",
+      crew: "Sam Wilson",
+      material: "Desk panels and chairs",
+      notes: "Dock access after 7 AM",
+      status: "scheduled"
+    },
+    {
+      id: "del_seed_4",
+      job: "Willow Creek Millwork",
+      address: "14 Willow Creek Rd",
+      date: isoDate(addDays(today, 2)),
+      time: "13:00",
+      crew: "",
+      material: "Architectural millwork",
+      notes: "Confirm crane requirement",
+      status: "unassigned"
+    }
+  ];
+  return {
+    version: 1,
+    loads,
+    deliveries,
+    vehicles,
+    equipment,
+    equipmentRequests: [],
+    settings: {
+      companyName: "Northline Woodworks",
+      companyPhone: "(555) 014-8820",
+      companyAddress: "218 Foundry Road, Hamilton, OH 45013",
+      defaultDriver: "",
+      defaultVehicle: "v_box",
+      distanceUnit: "mi",
+      weekStart: "sunday",
+      weightThreshold: 85,
+      spaceThreshold: 85
+    },
+    notifications: [
+      {
+        id: "n1",
+        title: "Trailer needs an axle check",
+        message: "The utility trailer is assigned to three moves this week. Verify tire and hitch condition before departure.",
+        type: "warning",
+        read: false,
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: "n2",
+        title: "Crane delivery may be required",
+        message: "The Willow Creek millwork panels exceed standard unloading reach.",
+        type: "info",
+        read: false,
+        createdAt: new Date().toISOString()
+      }
+    ],
+    plannerDraft: {
+      job: "",
+      destination: "",
+      date: isoDate(today),
+      time: "08:00",
+      priority: "standard",
+      driver: "",
+      notes: "",
+      vehicleId: "v_box",
+      pieces: []
+    },
+    calendarCursor: isoDate(today).slice(0, 7),
+    lastView: "dashboard"
+  };
+}
+
+let state = loadState();
+let plannerPieces = [];
+let calendarCursor = new Date(`${state.calendarCursor || isoDate(new Date())}-01T12:00:00`);
+let scheduleMode = "timeline";
+let equipmentFilter = "all";
+let pendingConfirmAction = null;
+let plannerRenderQueued = false;
+
+function loadState() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return getDefaultState();
+    const parsed = JSON.parse(stored);
+    const defaults = getDefaultState();
+    return {
+      ...defaults,
+      ...parsed,
+      settings: { ...defaults.settings, ...(parsed.settings || {}) },
+      loads: Array.isArray(parsed.loads) ? parsed.loads : defaults.loads,
+      deliveries: Array.isArray(parsed.deliveries) ? parsed.deliveries : defaults.deliveries,
+      vehicles: Array.isArray(parsed.vehicles) && parsed.vehicles.length ? parsed.vehicles : defaults.vehicles,
+      equipment: Array.isArray(parsed.equipment) ? parsed.equipment : defaults.equipment,
+      equipmentRequests: Array.isArray(parsed.equipmentRequests) ? parsed.equipmentRequests : [],
+      notifications: Array.isArray(parsed.notifications) ? parsed.notifications : [],
+      plannerDraft: parsed.plannerDraft || defaults.plannerDraft
+    };
+  } catch (error) {
+    console.error("Could not load saved state", error);
+    return getDefaultState();
+  }
+}
+
+function saveState() {
+  try {
+    state.plannerDraft.pieces = deepCopy(plannerPieces);
+    state.calendarCursor = isoDate(calendarCursor).slice(0, 7);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return true;
+  } catch (error) {
+    console.error("Could not save state", error);
+    showToast("Storage error", "Changes could not be saved in this browser.", "error");
+    return false;
+  }
+}
+
+function getVehicle(vehicleId) {
+  return state.vehicles.find(vehicle => vehicle.id === vehicleId) || null;
+}
+
+function calculatePieceTotals(pieces) {
+  let volume = 0;
+  let weight = 0;
+  let longest = 0;
+  let widest = 0;
+  let tallest = 0;
+  pieces.forEach(piece => {
+    const quantity = Math.max(1, Number(piece.quantity) || 1);
+    const l = Math.max(0, Number(piece.length) || 0);
+    const w = Math.max(0, Number(piece.width) || 0);
+    const h = Math.max(0, Number(piece.height) || 0);
+    const wt = Math.max(0, Number(piece.weight) || 0);
+    volume += (l * w * h * quantity) / 1728;
+    weight += wt * quantity;
+    longest = Math.max(longest, l);
+    widest = Math.max(widest, w);
+    tallest = Math.max(tallest, h);
+  });
+  return {
+    volume: Math.round(volume * 10) / 10,
+    weight: Math.round(weight * 10) / 10,
+    longest: Math.round(longest * 10) / 10,
+    widest: Math.round(widest * 10) / 10,
+    tallest: Math.round(tallest * 10) / 10,
+    itemCount: pieces.reduce((sum, piece) => sum + Math.max(1, Number(piece.quantity) || 1), 0)
+  };
+}
+
+function calculateUtilization(vehicle, pieces) {
+  if (!vehicle) {
+    return { weight: 0, space: 0, dimensionFit: true, dimensionIssue: "" };
+  }
+  const totals = calculatePieceTotals(pieces);
+  const weight = vehicle.maxWeight ? (totals.weight / vehicle.maxWeight) * 100 : 0;
+  const space = vehicle.maxVolume ? (totals.volume / vehicle.maxVolume) * 100 : 0;
+  let dimensionIssue = "";
+  if (totals.longest > vehicle.maxLength) {
+    dimensionIssue = `Longest item exceeds vehicle length by ${(totals.longest - vehicle.maxLength).toFixed(1)} in.`;
+  } else if (totals.widest > vehicle.maxWidth) {
+    dimensionIssue = `Widest item exceeds vehicle width by ${(totals.widest - vehicle.maxWidth).toFixed(1)} in.`;
+  } else if (totals.tallest > vehicle.maxHeight) {
+    dimensionIssue = `Tallest item exceeds vehicle height by ${(totals.tallest - vehicle.maxHeight).toFixed(1)} in.`;
+  }
+  return {
+    weight: Math.round(weight),
+    space: Math.round(space),
+    dimensionFit: !dimensionIssue,
+    dimensionIssue
+  };
+}
+
+function getLoadStatus(load) {
+  if (load.status === "complete") return { label: "Complete", className: "badge-success" };
+  if (!load.driver) return { label: "Needs driver", className: "badge-danger" };
+  if (!load.vehicleId) return { label: "No vehicle", className: "badge-danger" };
+  if (load.status === "in_transit") return { label: "In transit", className: "badge-info" };
+  return { label: load.status === "assigned" ? "Assigned" : "Planned", className: load.status === "assigned" ? "badge-info" : "badge-warning" };
+}
+
+function getDeliveryStatus(delivery) {
+  if (delivery.status === "complete") return { label: "Complete", className: "badge-success" };
+  if (!delivery.crew) return { label: "Unassigned", className: "badge-danger" };
+  return { label: "Scheduled", className: "badge-success" };
+}
+
+function showToast(title, message, type = "success") {
+  const region = document.getElementById("toastRegion");
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  const icon = type === "error"
+    ? '<path d="M12 8v5M12 17h.01"></path><circle cx="12" cy="12" r="9"></circle>'
+    : type === "warning"
+      ? '<path d="M12 3L2 21h20L12 3z"></path><path d="M12 9v5M12 18h.01"></path>'
+      : '<path d="M20 6L9 17l-5-5"></path>';
+  toast.innerHTML = `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg><div><strong>${escapeHtml(title)}</strong><p>${escapeHtml(message)}</p></div>`;
+  region.appendChild(toast);
+  window.setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(5px)";
+    window.setTimeout(() => toast.remove(), 180);
+  }, 3600);
+}
+
+function openModal(id) {
+  const modal = document.getElementById(id);
+  if (!modal) return;
+  modal.classList.add("open");
+  document.body.style.overflow = "hidden";
+  const focusable = modal.querySelector("input, select, textarea, button");
+  if (focusable) window.setTimeout(() => focusable.focus(), 30);
+}
+
+function closeModal(modal) {
+  if (!modal) return;
+  modal.classList.remove("open");
+  if (!document.querySelector(".modal-backdrop.open")) document.body.style.overflow = "";
+}
+
+function confirmAction(title, message, callback) {
+  document.getElementById("confirmTitle").textContent = title;
+  document.getElementById("confirmMessage").textContent = message;
+  pendingConfirmAction = callback;
+  openModal("confirmModal");
+}
+
+function switchView(viewName) {
+  if (!VIEWS.includes(viewName)) return;
+  VIEWS.forEach(name => {
+    document.getElementById(`view-${name}`).classList.toggle("active", name === viewName);
+  });
+  document.querySelectorAll(".nav-item[data-view]").forEach(button => {
+    button.classList.toggle("active", button.dataset.view === viewName);
+  });
+  const subtitles = {
+    dashboard: "Plan, load, and deliver without wasted trips.",
+    planner: "Build a safe, capacity-checked movement plan.",
+    schedule: "Keep every crew, vehicle, and site delivery aligned.",
+    equipment: "Find the right gear for every material movement.",
+    reports: "Track efficiency, utilization, and operating cost.",
+    settings: "Manage your company, defaults, and local data."
+  };
+  document.getElementById("headerSubtitle").textContent = subtitles[viewName];
+  state.lastView = viewName;
+  saveState();
+  closeSidebar();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function closeSidebar() {
+  document.getElementById("sidebar").classList.remove("open");
+  document.getElementById("mobileOverlay").classList.remove("open");
+}
+
+function renderDashboard() {
+  const today = isoDate(new Date());
+  const activeLoads = state.loads.filter(load => load.status !== "complete");
+  const todayLoads = activeLoads.filter(load => load.date === today);
+  const plannedDeliveries = state.deliveries.filter(delivery => delivery.date >= today && delivery.status !== "complete");
+  const totalWeight = activeLoads.reduce((sum, load) => sum + calculatePieceTotals(load.pieces || []).weight, 0);
+  const averageUtilization = activeLoads.length
+    ? Math.round(activeLoads.reduce((sum, load) => {
+        const util = calculateUtilization(getVehicle(load.vehicleId), load.pieces || []);
+        return sum + Math.max(util.weight, util.space);
+      }, 0) / activeLoads.length)
+    : 0;
+  const metrics = [
+    {
+      label: "Active loads",
+      value: activeLoads.length,
+      suffix: "",
+      delta: `${todayLoads.length} scheduled today`,
+      icon: '<path d="M3 7h11v10H3z"></path><path d="M14 10h4l3 3v4h-7z"></path><circle cx="7" cy="18" r="2"></circle><circle cx="18" cy="18" r="2"></circle>'
+    },
+    {
+      label: "Material weight",
+      value: Math.round(totalWeight).toLocaleString(),
+      suffix: "lb",
+      delta: "Across active movement plans",
+      icon: '<path d="M12 3v18M5 7h14M7 7l-4 8h8L7 7zM17 7l-4 8h8l-4-8z"></path>'
+    },
+    {
+      label: "Avg. utilization",
+      value: averageUtilization,
+      suffix: "%",
+      delta: averageUtilization >= 75 ? "Efficient consolidation" : "Room to improve",
+      good: averageUtilization >= 75,
+      icon: '<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"></path>'
+    },
+    {
+      label: "Upcoming deliveries",
+      value: plannedDeliveries.length,
+      suffix: "",
+      delta: `${plannedDeliveries.filter(delivery => !delivery.crew).length} need crew assignment`,
+      warning: plannedDeliveries.some(delivery => !delivery.crew),
+      icon: '<rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path>'
+    }
+  ];
+  document.getElementById("dashboardMetrics").innerHTML = metrics.map(metric => `
+    <div class="metric-card">
+      <div class="metric-top">
+        <div>
+          <div class="metric-label">${escapeHtml(metric.label)}</div>
+          <div class="metric-value">${escapeHtml(metric.value)} <small>${escapeHtml(metric.suffix)}</small></div>
+        </div>
+        <div class="metric-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${metric.icon}</svg></div>
+      </div>
+      <div class="metric-delta ${metric.good ? "delta-up" : metric.warning ? "delta-warning" : ""}">${escapeHtml(metric.delta)}</div>
+    </div>
+  `).join("");
+
+  const sortedLoads = [...activeLoads].sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)).slice(0, 6);
+  document.getElementById("activeLoadsBody").innerHTML = sortedLoads.map(load => {
+    const vehicle = getVehicle(load.vehicleId);
+    const util = calculateUtilization(vehicle, load.pieces || []);
+    const status = getLoadStatus(load);
+    const utilizationClass = util.space > 100 || util.weight > 100 ? "danger" : util.space >= state.settings.spaceThreshold || util.weight >= state.settings.weightThreshold ? "warning" : "";
+    return `<tr>
+      <td><div class="cell-title">${escapeHtml(load.job)}</div><div class="cell-subtitle">${escapeHtml(load.materialSummary || calculatePieceTotals(load.pieces || []).itemCount + " items")}</div></td>
+      <td><div class="cell-title">${escapeHtml(load.destination)}</div><div class="cell-subtitle">${escapeHtml(load.driver || "Driver needed")}</div></td>
+      <td>${escapeHtml(vehicle?.name || "Not assigned")}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:7px"><span class="util-bar" style="width:68px"><span class="util-fill ${utilizationClass}" style="display:block;width:${Math.min(100, Math.max(util.space, util.weight))}%"></span></span><span style="font-size:10px;font-weight:800">${Math.max(util.space, util.weight)}%</span></div>
+      </td>
+      <td><span class="badge ${status.className}">${status.label}</span></td>
+      <td><div class="cell-title">${formatDate(load.date)}</div><div class="cell-subtitle">${formatTime(load.time)}</div></td>
+    </tr>`;
+  }).join("");
+  document.getElementById("activeLoadsEmpty").innerHTML = sortedLoads.length ? "" : emptyState("No active loads", "Create a load plan to start tracking materials and vehicle assignments.", "Create load", "loadModal");
+
+  const upcoming = [...plannedDeliveries].sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)).slice(0, 5);
+  document.getElementById("dashboardSchedule").innerHTML = upcoming.map(delivery => {
+    const status = getDeliveryStatus(delivery);
+    return `<div class="schedule-item">
+      <div><div class="schedule-time">${formatTime(delivery.time)}</div><div class="schedule-date">${formatDate(delivery.date)}</div></div>
+      <div><div class="schedule-title">${escapeHtml(delivery.job)}</div><div class="schedule-subtitle">${escapeHtml(delivery.address)} · ${escapeHtml(delivery.crew || "Crew unassigned")}</div></div>
+      <span class="badge ${status.className}">${status.label}</span>
+    </div>`;
+  }).join("");
+  document.getElementById("dashboardScheduleEmpty").innerHTML = upcoming.length ? "" : emptyState("No upcoming deliveries", "Scheduled site deliveries will appear here.", "Add delivery", "deliveryModal");
+
+  const vehicleIds = [...new Set(activeLoads.map(load => load.vehicleId).filter(Boolean))];
+  document.getElementById("vehicleUtilization").innerHTML = vehicleIds.map(id => {
+    const vehicle = getVehicle(id);
+    const loads = activeLoads.filter(load => load.vehicleId === id);
+    const totals = loads.reduce((sum, load) => {
+      const pieceTotals = calculatePieceTotals(load.pieces || []);
+      sum.volume += pieceTotals.volume;
+      sum.weight += pieceTotals.weight;
+      return sum;
+    }, { volume: 0, weight: 0 });
+    const volumePct = Math.round((totals.volume / vehicle.maxVolume) * 100);
+    const weightPct = Math.round((totals.weight / vehicle.maxWeight) * 100);
+    const pct = Math.max(volumePct, weightPct);
+    const cls = pct > 100 ? "danger" : pct >= state.settings.spaceThreshold ? "warning" : "";
+    return `<div class="util-item">
+      <div class="util-head"><div class="util-name">${escapeHtml(vehicle.name)}</div><div class="util-value">${pct}% · ${loads.length} load${loads.length === 1 ? "" : "s"}</div></div>
+      <div class="util-bar"><div class="util-fill ${cls}" style="width:${Math.min(100, pct)}%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;color:var(--faint);font-size:9px"><span>${Math.round(totals.volume)} / ${vehicle.maxVolume} ft³</span><span>${Math.round(totals.weight)} / ${vehicle.maxWeight.toLocaleString()} lb</span></div>
+    </div>`;
+  }).join("") || emptyState("No vehicle assignments", "Assign a vehicle to a saved load to monitor utilization.");
+
+  const alerts = [];
+  activeLoads.forEach(load => {
+    const vehicle = getVehicle(load.vehicleId);
+    const util = calculateUtilization(vehicle, load.pieces || []);
+    if (!util.dimensionFit) {
+      alerts.push({ type: "danger", title: `${load.job} exceeds cargo dimensions`, text: util.dimensionIssue });
+    } else if (util.weight > 100 || util.space > 100) {
+      alerts.push({ type: "danger", title: `${load.job} exceeds vehicle capacity`, text: `${Math.max(util.weight, util.space)}% of ${vehicle?.name || "vehicle"} capacity.` });
+    } else if (!load.driver) {
+      alerts.push({ type: "warning", title: `${load.job} needs a driver`, text: `Delivery is scheduled for ${formatDate(load.date)} at ${formatTime(load.time)}.` });
+    } else if (util.weight >= state.settings.weightThreshold || util.space >= state.settings.spaceThreshold) {
+      alerts.push({ type: "warning", title: `${load.job} is nearing capacity`, text: `${Math.max(util.weight, util.space)}% utilization leaves limited room for straps and extras.` });
+    }
+  });
+  state.deliveries.filter(delivery => !delivery.crew && delivery.status !== "complete").forEach(delivery => {
+    alerts.push({ type: "warning", title: `${delivery.job} delivery is unassigned`, text: `${formatDate(delivery.date)} at ${formatTime(delivery.time)}.` });
+  });
+  document.getElementById("dashboardAlerts").innerHTML = alerts.slice(0, 5).map(alert => {
+    const icon = alert.type === "danger"
+      ? '<circle cx="12" cy="12" r="9"></circle><path d="M12 8v5M12 17h.01"></path>'
+      : '<path d="M12 3L2 21h20L12 3z"></path><path d="M12 9v5M12 18h.01"></path>';
+    return `<div class="alert-item"><div class="alert-icon ${alert.type}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg></div><div><div class="alert-title">${escapeHtml(alert.title)}</div><div class="alert-text">${escapeHtml(alert.text)}</div></div></div>`;
+  }).join("") || `<div class="empty-state" style="padding:28px 12px"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg></div><h3>Everything looks good</h3><p>There are no outstanding load or crew issues.</p></div>`;
+}
+
+function emptyState(title, message, buttonLabel = "", modalId = "") {
+  return `<div class="empty-state">
+    <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v10H3z"></path><path d="M14 10h4l3 3v4h-7z"></path><circle cx="7" cy="18" r="2"></circle><circle cx="18" cy="18" r="2"></circle></svg></div>
+    <h3>${escapeHtml(title)}</h3><p>${escapeHtml(message)}</p>
+    ${buttonLabel ? `<button class="btn btn-primary" data-open-modal="${escapeHtml(modalId)}">${escapeHtml(buttonLabel)}</button>` : ""}
+  </div>`;
+}
+
+function renderPlanner() {
+  const draft = state.plannerDraft;
+  document.getElementById("loadJob").value = draft.job || "";
+  document.getElementById("loadDestination").value = draft.destination || "";
+  document.getElementById("loadDate").value = draft.date || isoDate(new Date());
+  document.getElementById("loadTime").value = draft.time || "08:00";
+  document.getElementById("loadPriority").value = draft.priority || "standard";
+  document.getElementById("loadDriver").value = draft.driver || "";
+  document.getElementById("loadNotes").value = draft.notes || "";
+  renderVehicleOptions();
+  renderPieces();
+  updateLoadSummary();
+}
+
+function renderVehicleOptions() {
+  const selected = state.plannerDraft.vehicleId;
+  document.getElementById("vehicleOptions").innerHTML = state.vehicles.map(vehicle => {
+    const util = calculateUtilization(vehicle, plannerPieces);
+    const max = Math.max(util.weight, util.space);
+    const fitText = max > 100 ? "Over capacity" : max >= state.settings.spaceThreshold ? "Near limit" : "Good fit";
+    return `<label class="vehicle-option ${selected === vehicle.id ? "selected" : ""}">
+      <input type="radio" name="vehicle" value="${escapeHtml(vehicle.id)}" ${selected === vehicle.id ? "checked" : ""}>
+      <div>
+        <div class="vehicle-name">${escapeHtml(vehicle.name)}</div>
+        <div class="vehicle-meta">${escapeHtml(vehicle.location)} · ${vehicle.maxWeight.toLocaleString()} lb · ${vehicle.maxVolume} ft³</div>
+        <div style="margin-top:7px"><div class="util-bar"><div class="util-fill ${max > 100 ? "danger" : max >= state.settings.spaceThreshold ? "warning" : ""}" style="width:${Math.min(100, max)}%"></div></div></div>
+      </div>
+      <div class="vehicle-capacity">${max}%<br><span style="color:var(--faint);font-weight:600">${fitText}</span></div>
+    </label>`;
+  }).join("");
+}
+
+function renderPieces() {
+  const list = document.getElementById("pieceList");
+  list.innerHTML = plannerPieces.map((piece, index) => `
+    <div class="piece-row" data-index="${index}">
+      <div class="field piece-name">
+        <label for="pieceName${index}">Item description</label>
+        <input class="input piece-field" id="pieceName${index}" data-key="name" type="text" value="${escapeHtml(piece.name)}" placeholder="e.g. Cabinet boxes">
+      </div>
+      <div class="field">
+        <label for="pieceLength${index}">Length in</label>
+        <input class="input piece-field" id="pieceLength${index}" data-key="length" type="number" min="0" step="0.1" value="${escapeHtml(piece.length)}">
+      </div>
+      <div class="field">
+        <label for="pieceWidth${index}">Width in</label>
+        <input class="input piece-field" id="pieceWidth${index}" data-key="width" type="number" min="0" step="0.1" value="${escapeHtml(piece.width)}">
+      </div>
+      <div class="field">
+        <label for="pieceHeight${index}">Height in</label>
+        <input class="input piece-field" id="pieceHeight${index}" data-key="height" type="number" min="0" step="0.1" value="${escapeHtml(piece.height)}">
+      </div>
+      <div class="field">
+        <label for="pieceQuantity${index}">Qty</label>
+        <input class="input piece-field" id="pieceQuantity${index}" data-key="quantity" type="number" min="1" step="1" value="${escapeHtml(piece.quantity)}">
+      </div>
+      <button class="remove-piece" type="button" data-remove-piece="${index}" aria-label="Remove ${escapeHtml(piece.name || "item")}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path></svg>
+      </button>
+    </div>
+  `).join("");
+  document.getElementById("pieceEmpty").innerHTML = plannerPieces.length ? "" : `<div class="empty-state" style="padding:28px 10px"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"></path></svg></div><h3>No materials added</h3><p>Add boards, cases, machines, or equipment to calculate capacity.</p><button class="btn btn-sm" id="emptyAddPiece" type="button">Add first item</button></div>`;
+  const emptyAdd = document.getElementById("emptyAddPiece");
+  if (emptyAdd) emptyAdd.addEventListener("click", addPiece);
+}
+
+function addPiece() {
+  plannerPieces.push({
+    id: uid("piece"),
+    name: "",
+    length: 0,
+    width: 0,
+    height: 0,
+    weight: 0,
+    quantity: 1
+  });
+  renderPieces();
+  updateLoadSummary();
+  saveState();
+  const inputs = document.querySelectorAll("#pieceList .piece-field");
+  if (inputs.length) inputs[inputs.length - 6]?.focus();
+}
+
+function removePiece(index) {
+  plannerPieces.splice(index, 1);
+  renderPieces();
+  updateLoadSummary();
+  saveState();
+}
+
+function updateLoadSummary() {
+  const vehicle = getVehicle(state.plannerDraft.vehicleId);
+  const totals = calculatePieceTotals(plannerPieces);
+  const util = calculateUtilization(vehicle, plannerPieces);
+  const summary = document.getElementById("loadSummary");
+  if (!vehicle) {
+    summary.innerHTML = `<h3>Load summary</h3><div class="empty-state" style="padding:20px 5px"><h3>Select a vehicle</h3><p>Choose a vehicle to compare weight and dimensions.</p></div>`;
+    return;
+  }
+  let statusClass = "good";
+  let statusTitle = "Load fits selected vehicle";
+  let statusText = `${Math.max(util.weight, util.space)}% of primary capacity used.`;
+  if (!util.dimensionFit || util.weight > 100 || util.space > 100) {
+    statusClass = "danger";
+    statusTitle = "Load exceeds safe limits";
+    statusText = util.dimensionIssue || "Select a larger vehicle or reduce the load before scheduling.";
+  } else if (util.weight >= state.settings.weightThreshold || util.space >= state.settings.spaceThreshold) {
+    statusClass = "warning";
+    statusTitle = "Load is near capacity";
+    statusText = "Allow room for securement, straps, and small items not included in this plan.";
+  }
+  summary.innerHTML = `
+    <h3>Load summary</h3>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end">
+      <div><div class="summary-number">${totals.itemCount}</div><div class="summary-label">total items</div></div>
+      <div style="text-align:right"><div class="summary-number">${Math.round(totals.weight).toLocaleString()} <small>lb</small></div><div class="summary-label">estimated weight</div></div>
+    </div>
+    <div class="fit-status ${statusClass}"><strong>${statusTitle}</strong><br>${escapeHtml(statusText)}</div>
+    <div class="summary-row"><span>Cargo volume</span><strong>${totals.volume} of ${vehicle.maxVolume} ft³ (${util.space}%)</strong></div>
+    <div class="summary-row"><span>Weight capacity</span><strong>${Math.round(totals.weight).toLocaleString()} of ${vehicle.maxWeight.toLocaleString()} lb (${util.weight}%)</strong></div>
+    <div class="summary-row"><span>Longest item</span><strong>${totals.longest} in</strong></div>
+    <div class="summary-row"><span>Widest item</span><strong>${totals.widest} in</strong></div>
+    <div class="summary-row"><span>Tallest item</span><strong>${totals.tallest} in</strong></div>
+    <div class="summary-row"><span>Vehicle limits</span><strong>${vehicle.maxLength} × ${vehicle.maxWidth} × ${vehicle.maxHeight} in</strong></div>
+    <button class="btn btn-accent btn-block" id="summarySave" style="margin-top:15px">Save this load plan</button>
+  `;
+  const summarySave = document.getElementById("summarySave");
+  if (summarySave) summarySave.addEventListener("click", saveLoadPlan);
+}
+
+function validatePlanner(showErrors = true) {
+  const errors = {
+    loadJob: !state.plannerDraft.job.trim() ? "Enter a job or work order." : "",
+    loadDestination: !state.plannerDraft.destination.trim() ? "Enter the destination site." : "",
+    loadDate: !state.plannerDraft.date ? "Choose a delivery date." : "",
+    loadTime: !state.plannerDraft.time ? "Choose a pickup or delivery time." : ""
+  };
+  if (showErrors) {
+    Object.keys(errors).forEach(key => {
+      const input = document.getElementById(key);
+      const error = document.getElementById(`${key}Error`);
+      if (input) input.classList.toggle("error", Boolean(errors[key]));
+      if (error) error.textContent = errors[key];
+    });
+    const alert = document.getElementById("plannerError");
+    const messages = Object.values(errors).filter(Boolean);
+    if (messages.length) {
+      alert.textContent = messages.join(" ");
+      alert.classList.add("visible");
+    } else {
+      alert.classList.remove("visible");
+    }
+  }
+  return !Object.values(errors).some(Boolean);
+}
+
+function validatePieces() {
+  if (!plannerPieces.length) return "Add at least one material or equipment item.";
+  for (let index = 0; index < plannerPieces.length; index++) {
+    const piece = plannerPieces[index];
+    if (!piece.name.trim()) return `Item ${index + 1} needs a description.`;
+    if (Number(piece.length) <= 0 || Number(piece.width) <= 0 || Number(piece.height) <= 0) return `Enter dimensions for “${piece.name}”.`;
+    if (Number(piece.weight) < 0) return `Weight cannot be negative for “${piece.name}”.`;
+    if (Number(piece.quantity) < 1) return `Quantity must be at least 1 for “${piece.name}”.`;
+  }
+  return "";
+}
+
+function saveLoadPlan() {
+  const basicValid = validatePlanner(true);
+  const pieceError = validatePieces();
+  if (!basicValid || pieceError) {
+    const alert = document.getElementById("plannerError");
+    alert.textContent = pieceError || "Complete the highlighted required fields before saving.";
+    alert.classList.add("visible");
+    showToast("Load plan incomplete", pieceError || "Complete the required fields.", "error");
+    return;
+  }
+  const vehicle = getVehicle(state.plannerDraft.vehicleId);
+  const util = calculateUtilization(vehicle, plannerPieces);
+  if (!util.dimensionFit) {
+    showToast("Dimension conflict", util.dimensionIssue, "error");
+    return;
+  }
+  if (util.weight > 100 || util.space > 100) {
+    const proceed = confirmAction(
+      "Save an over-capacity plan?",
+      "This load exceeds the selected vehicle's safe weight or cargo-space limit. It will be flagged for review.",
+      () => persistLoadPlan(true)
+    );
+    void proceed;
+    return;
+  }
+  persistLoadPlan(false);
+}
+
+function persistLoadPlan(overCapacity) {
+  const load = {
+    id: uid("load"),
+    job: state.plannerDraft.job.trim(),
+    destination: state.plannerDraft.destination.trim(),
+    date: state.plannerDraft.date,
+    time: state.plannerDraft.time,
+    priority: state.plannerDraft.priority,
+    driver: state.plannerDraft.driver,
+    vehicleId: state.plannerDraft.vehicleId,
+    materialSummary: plannerPieces.map(piece => `${piece.quantity}× ${piece.name}`).join(", ").slice(0, 180),
+    notes: state.plannerDraft.notes.trim(),
+    pieces: deepCopy(plannerPieces),
+    status: state.plannerDraft.driver ? "assigned" : "planned",
+    overCapacity,
+    createdAt: new Date().toISOString()
+  };
+  state.loads.unshift(load);
+  state.plannerDraft = {
+    job: "",
+    destination: "",
+    date: isoDate(new Date()),
+    time: "08:00",
+    priority: "standard",
+    driver: state.settings.defaultDriver || "",
+    notes: "",
+    vehicleId: state.settings.defaultVehicle || state.vehicles[0]?.id || "",
+    pieces: []
+  };
+  plannerPieces = [];
+  saveState();
+  renderAll();
+  showToast("Load plan saved", `${load.job} was added to active loads.`);
+  switchView("dashboard");
+}
+
+function clearPlanner() {
+  confirmAction("Clear planner?", "All unsaved load details and materials will be removed.", () => {
+    state.plannerDraft = {
+      job: "",
+      destination: "",
+      date: isoDate(new Date()),
+      time: "08:00",
+      priority: "standard",
+      driver: state.settings.defaultDriver || "",
+      notes: "",
+      vehicleId: state.settings.defaultVehicle || state.vehicles[0]?.id || "",
+      pieces: []
+    };
+    plannerPieces = [];
+    saveState();
+    renderPlanner();
+    showToast("Planner cleared", "The load draft has been reset.");
+  });
+}
+
+function syncPlannerDraft() {
+  state.plannerDraft.job = document.getElementById("loadJob").value;
+  state.plannerDraft.destination = document.getElementById("loadDestination").value;
+  state.plannerDraft.date = document.getElementById("loadDate").value;
+  state.plannerDraft.time = document.getElementById("loadTime").value;
+  state.plannerDraft.priority = document.getElementById("loadPriority").value;
+  state.plannerDraft.driver = document.getElementById("loadDriver").value;
+  state.plannerDraft.notes = document.getElementById("loadNotes").value;
+}
+
+function renderSchedule() {
+  const today = isoDate(new Date());
+  const deliveries = [...state.deliveries].sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
+  const upcoming = deliveries.filter(delivery => delivery.date >= addDays(new Date(), -7));
+  document.getElementById("scheduleCount").textContent = `${upcoming.length} scheduled`;
+  document.getElementById("scheduleRangeTitle").textContent = "Upcoming timeline";
+  document.getElementById("scheduleTimeline").innerHTML = upcoming.map(delivery => {
+    const status = getDeliveryStatus(delivery);
+    const nodeClass = !delivery.crew ? "danger" : delivery.priority === "urgent" ? "warning" : "";
+    return `<div class="timeline-row">
+      <div class="timeline-time">${formatTime(delivery.time)}<span class="timeline-date">${formatDate(delivery.date)}</span></div>
+      <div class="timeline-node ${nodeClass}"></div>
+      <div class="timeline-card">
+        <div class="timeline-card-top">
+          <div><div class="timeline-title">${escapeHtml(delivery.job)}</div><div class="timeline-meta">${escapeHtml(delivery.address)}</div></div>
+          <span class="badge ${status.className}">${status.label}</span>
+        </div>
+        <div class="timeline-details">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0116 0"></path></svg>${escapeHtml(delivery.crew || "Crew unassigned")}</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h11v10H3z"></path><path d="M14 10h4l3 3v4h-7z"></path></svg>${escapeHtml(delivery.material || "No material listed")}</span>
+          ${delivery.notes ? `<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"></path><path d="M8 9h8M8 13h6"></path></svg>${escapeHtml(delivery.notes)}</span>` : ""}
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+  document.getElementById("scheduleEmpty").innerHTML = upcoming.length ? "" : emptyState("No deliveries scheduled", "Add a delivery to start coordinating crews and site access.", "Add delivery", "deliveryModal");
+  renderCrewAvailability(upcoming);
+  renderCalendars();
+}
+
+function renderCrewAvailability(deliveries) {
+  const counts = {};
+  deliveries.forEach(delivery => {
+    if (delivery.crew && delivery.status !== "complete") counts[delivery.crew] = (counts[delivery.crew] || 0) + 1;
+  });
+  document.getElementById("crewAvailability").innerHTML = DRIVERS.map(driver => {
+    const count = counts[driver] || 0;
+    const available = count < 3;
+    return `<div class="side-stat">
+      <div class="side-stat-top"><span>${escapeHtml(driver)}</span><strong>${count} assignment${count === 1 ? "" : "s"}</strong></div>
+      <div class="util-bar"><div class="util-fill ${count >= 3 ? "danger" : count === 2 ? "warning" : ""}" style="width:${Math.min(100, count / 3 * 100)}%"></div></div>
+      <div style="color:var(--muted);font-size:9px;margin-top:5px">${available ? "Available for more assignments" : "At assignment capacity"}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderCalendars() {
+  renderCalendar(document.getElementById("miniCalendarGrid"), calendarCursor, false);
+  renderCalendar(document.getElementById("fullCalendarGrid"), calendarCursor, true);
+  const title = calendarCursor.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  document.getElementById("miniCalendarTitle").textContent = title;
+  document.getElementById("fullCalendarTitle").textContent = title;
+}
+
+function renderCalendar(container, cursor, large) {
+  if (!container) return;
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const first = new Date(year, month, 1);
+  const startOffset = first.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const previousDays = new Date(year, month, 0).getDate();
+  const cells = [];
+  for (let i = startOffset - 1; i >= 0; i--) {
+    cells.push({ date: new Date(year, month - 1, previousDays - i), other: true });
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    cells.push({ date: new Date(year, month, day), other: false });
+  }
+  let next = 1;
+  while (cells.length < 42) {
+    cells.push({ date: new Date(year, month + 1, next), other: true });
+    next++;
+  }
+  container.innerHTML = cells.map(cell => {
+    const key = isoDate(cell.date);
+    const events = state.deliveries.filter(delivery => delivery.date === key);
+    const eventHtml = events.slice(0, large ? 3 : 2).map(delivery => {
+      const eventClass = !delivery.crew ? "danger" : delivery.priority === "urgent" ? "warning" : "";
+      return `<div class="calendar-event ${eventClass}" title="${escapeHtml(delivery.job + " at " + formatTime(delivery.time))}">${escapeHtml(delivery.job)}</div>`;
+    }).join("");
+    const more = events.length > (large ? 3 : 2) ? `<div style="font-size:8px;color:var(--muted);font-weight:700">+${events.length - (large ? 3 : 2)} more</div>` : "";
+    return `<div class="calendar-day ${cell.other ? "other" : ""}"><div class="calendar-day-number">${cell.date.getDate()}</div>${eventHtml}${more}</div>`;
+  }).join("");
+}
+
+function renderEquipment() {
+  const available = state.equipment.filter(item => item.status === "available").length;
+  const owned = state.equipment.filter(item => item.source === "owned").length;
+  const rentalSpend = state.equipmentRequests.filter(request => request.type === "rental").reduce((sum, request) => sum + Number(request.estimatedCost || 0), 0);
+  const pending = state.equipmentRequests.filter(request => request.status === "requested").length;
+  const metrics = [
+    ["Available gear", available, "Ready to assign", '<path d="M14 6l4-3 3 3-3 4"></path><path d="M17 7L9 15l-5 1 1-5 8-8"></path>'],
+    ["Owned equipment", owned, "Current inventory", '<rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M7 8h10M7 12h10M7 16h6"></path>'],
+    ["Rental requests", pending, "Awaiting approval", '<path d="M12 3v18M3 12h18"></path>'],
+    ["Est. rental spend", `$${rentalSpend.toLocaleString()}`, "Current request total", '<circle cx="12" cy="12" r="9"></circle><path d="M16 8h-6a2 2 0 000 4h4a2 2 0 010 4H8M12 6v12"></path>']
+  ];
+  document.getElementById("equipmentMetrics").innerHTML = metrics.map(metric => `
+    <div class="metric-card"><div class="metric-top"><div><div class="metric-label">${escapeHtml(metric[0])}</div><div class="metric-value">${escapeHtml(metric[1])}</div></div><div class="metric-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${metric[3]}</svg></div></div><div class="metric-delta">${escapeHtml(metric[2])}</div></div>
+  `).join("");
+
+  const nextLoad = state.loads.find(load => load.status !== "complete") || null;
+  const loadTotals = nextLoad ? calculatePieceTotals(nextLoad.pieces || []) : { weight: 0, volume: 0, longest: 0, tallest: 0, widest: 0 };
+  const recommendations = buildEquipmentRecommendations(nextLoad, loadTotals);
+  document.getElementById("equipmentRecommendations").innerHTML = recommendations.map(rec => {
+    const match = rec.match;
+    const cls = match > 90 ? "" : match > 70 ? "warning" : "danger";
+    return `<div class="recommendation-card">
+      <div class="rec-top"><div class="rec-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${rec.icon}</svg></div><span class="badge ${match >= 90 ? "badge-success" : match >= 70 ? "badge-warning" : "badge-danger"}">${match}% match</span></div>
+      <div class="rec-title">${escapeHtml(rec.title)}</div>
+      <div class="rec-description">${escapeHtml(rec.description)}</div>
+      <div class="rec-price">${rec.price === 0 ? "Owned" : `$${rec.price}`} <small>${rec.price === 0 ? "equipment" : "/ day"}</small></div>
+      <ul class="rec-specs">
+        <li><span>Capacity</span><strong>${escapeHtml(rec.capacity)}</strong></li>
+        <li><span>Available</span><strong>${escapeHtml(rec.available)}</strong></li>
+        <li><span>Location</span><strong>${escapeHtml(rec.location)}</strong></li>
+      </ul>
+      <div class="match-score"><span class="match-label">FIT</span><div class="util-bar"><div class="util-fill ${cls}" style="width:${Math.min(100, match)}%"></div></div></div>
+      <button class="btn btn-block equipment-request" data-equipment-name="${escapeHtml(rec.name)}" data-equipment-type="${escapeHtml(rec.type)}">Request ${escapeHtml(rec.short)}</button>
+    </div>`;
+  }).join("");
+
+  const filtered = state.equipment.filter(item => equipmentFilter === "all" || item.source === equipmentFilter);
+  document.getElementById("equipmentTableBody").innerHTML = filtered.map(item => {
+    const statusMap = {
+      available: ["Available", "badge-success"],
+      transfer: ["Transfer recommended", "badge-warning"],
+      maintenance: ["Maintenance", "badge-danger"],
+      reserved: ["Reserved", "badge-info"]
+    };
+    const status = statusMap[item.status] || ["Unknown", "badge-neutral"];
+    return `<tr>
+      <td><div class="cell-title">${escapeHtml(item.name)}</div><div class="cell-subtitle">${escapeHtml(item.capacity)}</div></td>
+      <td>${escapeHtml(item.type)}</td>
+      <td>${escapeHtml(item.location)}</td>
+      <td>${escapeHtml(item.capacity)}</td>
+      <td><span class="badge ${status[1]}">${status[0]}</span></td>
+      <td>${item.dailyRate ? `$${item.dailyRate}/day` : "—"}</td>
+      <td><button class="btn btn-sm equipment-request" data-equipment-name="${escapeHtml(item.name)}" data-equipment-type="${escapeHtml(item.type)}">Request</button></td>
+    </tr>`;
+  }).join("");
+  document.getElementById("equipmentEmpty").innerHTML = filtered.length ? "" : emptyState("No equipment found", "Try a different inventory filter.");
+  const requestSelect = document.getElementById("requestEquipment");
+  requestSelect.innerHTML = state.equipment.map(item => `<option value="${escapeHtml(item.name)}">${escapeHtml(item.name)}</option>`).join("");
+}
+
+function buildEquipmentRecommendations(nextLoad, totals) {
+  const base = [
+    {
+      name: "Utility Trailer Rental",
+      type: "Rental",
+      short: "trailer",
+      title: "Utility trailer rental",
+      description: "A flexible towable option for dimensional lumber, sheet goods, and job-site equipment.",
+      price: 65,
+      capacity: "2,000 lb payload",
+      available: "Today",
+      location: "North warehouse",
+      icon: '<path d="M3 17h18M5 17V7h10l4 4v6M8 17a2 2 0 100-4 2 2 0 000 4M17 17a2 2 0 100-4 2 2 0 000 4"></path>'
+    },
+    {
+      name: "10k Forklift Rental",
+      type: "Rental",
+      short: "forklift",
+      title: "Material handler rental",
+      description: "Best for dense millwork, machinery, and concentrated loads that need controlled unloading.",
+      price: 385,
+      capacity: "10,000 lb",
+      available: "Tomorrow",
+      location: "Regional rental partner",
+      icon: '<path d="M4 17h12M7 17V7h6v10M13 10h4l3 3v4h-7"></path><circle cx="7" cy="19" r="2"></circle><circle cx="18" cy="19" r="2"></circle>'
+    },
+    {
+      name: "SawStop Table Saw",
+      type: "Transfer",
+      short: "saw",
+      title: "Transfer from main warehouse",
+      description: "Move an owned saw to another site when on-site cutting is needed for the installation.",
+      price: 0,
+      capacity: "400 lb equipment",
+      available: "Available",
+      location: "Main warehouse",
+      icon: '<path d="M4 5h16v11H4zM8 16v4M16 16v4M7 9h10"></path>'
+    }
+  ];
+  return base.map(rec => {
+    let match = 76;
+    if (nextLoad) {
+      const weightNeed = totals.weight;
+      const dimensionNeed = Math.max(totals.longest, totals.tallest);
+      if (rec.type === "Rental" && rec.short === "trailer") {
+        match = Math.min(96, Math.round(68 + Math.min(20, weightNeed / 50) + (dimensionNeed > 96 ? 6 : 0)));
+      } else if (rec.short === "forklift") {
+        match = Math.min(98, Math.round(62 + Math.min(30, weightNeed / 80) + (dimensionNeed > 120 ? 5 : 0)));
+      } else {
+        match = Math.min(94, Math.round(58 + Math.min(28, totals.itemCount * 4)));
+      }
+    }
+    return { ...rec, match };
+  });
+}
+
+function renderReports() {
+  const completed = state.loads.filter(load => load.status === "complete");
+  const allLoads = state.loads;
+  const totalWeight = allLoads.reduce((sum, load) => sum + calculatePieceTotals(load.pieces || []).weight, 0);
+  const averageUtil = allLoads.length ? Math.round(allLoads.reduce((sum, load) => sum + Math.max(calculateUtilization(getVehicle(load.vehicleId), load.pieces || []).weight, calculateUtilization(getVehicle(load.vehicleId), load.pieces || []).space), 0) / allLoads.length) : 0;
+  const onTime = completed.length ? Math.round((completed.filter(load => !load.late).length / completed.length) * 100) : 100;
+  const rentalCost = state.equipmentRequests.reduce((sum, request) => sum + Number(request.estimatedCost || 0), 0);
+  const reportMetrics = [
+    ["Total movements", allLoads.length, "Saved load plans", '<path d="M3 7h11v10H3z"></path><path d="M14 10h4l3 3v4h-7z"></path>'],
+    ["Material moved", `${Math.round(totalWeight).toLocaleString()} lb`, "Estimated load weight", '<path d="M12 3v18M5 7h14M7 7l-4 8h8L7 7zM17 7l-4 8h8l-4-8z"></path>'],
+    ["Avg. utilization", `${averageUtil}%`, "Across all saved loads", '<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"></path>'],
+    ["On-time rate", `${onTime}%`, "Completed deliveries", '<circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>']
+  ];
+  document.getElementById("reportMetrics").innerHTML = reportMetrics.map(metric => `
+    <div class="metric-card"><div class="metric-top"><div><div class="metric-label">${escapeHtml(metric[0])}</div><div class="metric-value">${escapeHtml(metric[1])}</div></div><div class="metric-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${metric[3]}</svg></div></div><div class="metric-delta">${escapeHtml(metric[2])}</div></div>
+  `).join("");
+
+  const weeks = ["Week 1", "Week 2", "Week 3", "Week 4"];
+  const values = weeks.map((_, index) => {
+    const loads = allLoads.filter((load, loadIndex) => loadIndex % 4 === index);
+    if (!loads.length) return 0;
+    return Math.round(loads.reduce((sum, load) => {
+      const util = calculateUtilization(getVehicle(load.vehicleId), load.pieces || []);
+      return sum + Math.max(util.weight, util.space);
+    }, 0) / loads.length);
+  });
+  document.getElementById("efficiencyChart").innerHTML = `
+    <div style="height:245px;display:flex;align-items:flex-end;gap:22px;padding:15px 10px 0;border-bottom:1px solid var(--border);background:repeating-linear-gradient(to top,transparent 0,transparent 49px,var(--border) 50px)">
+      ${values.map(value => `<div style="flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px"><div style="font-size:10px;font-weight:800">${value}%</div><div style="width:min(65px,80%);height:${Math.max(4, value * 1.8)}px;background:${value >= 80 ? "var(--brand-2)" : "var(--accent)"};border-radius:5px 5px 0 0"></div></div>`).join("")}
+    </div>
+    <div style="display:flex;gap:22px;padding:8px 10px 0">${weeks.map(week => `<div style="flex:1;text-align:center;color:var(--muted);font-size:9px;font-weight:800">${week}</div>`).join("")}</div>
+  `;
+
+  const overCapacity = allLoads.filter(load => {
+    const util = calculateUtilization(getVehicle(load.vehicleId), load.pieces || []);
+    return util.weight > 100 || util.space > 100 || !util.dimensionFit;
+  }).length;
+  const unassigned = state.deliveries.filter(delivery => !delivery.crew && delivery.status !== "complete").length;
+  document.getElementById("performanceSummary").innerHTML = `
+    <div class="side-stat"><div class="side-stat-top"><span>Safe load rate</span><strong>${allLoads.length ? Math.round((allLoads.length - overCapacity) / allLoads.length * 100) : 100}%</strong></div><div class="util-bar"><div class="util-fill" style="width:${allLoads.length ? (allLoads.length - overCapacity) / allLoads.length * 100 : 100}%"></div></div></div>
+    <div class="side-stat"><div class="side-stat-top"><span>Assigned deliveries</span><strong>${state.deliveries.length - unassigned} of ${state.deliveries.length}</strong></div><div class="util-bar"><div class="util-fill ${unassigned ? "warning" : ""}" style="width:${state.deliveries.length ? (state.deliveries.length - unassigned) / state.deliveries.length * 100 : 100}%"></div></div></div>
+    <div class="side-stat"><div class="side-stat-top"><span>Estimated rental spend</span><strong>$${rentalCost.toLocaleString()}</strong></div><div class="util-bar"><div class="util-fill warning" style="width:${Math.min(100, rentalCost / 10)}%"></div></div></div>
+    <div class="side-stat"><div class="side-stat-top"><span>Planning accuracy</span><strong>${averageUtil}%</strong></div><div class="util-bar"><div class="util-fill ${averageUtil >= 80 ? "" : "warning"}" style="width:${averageUtil}%"></div></div></div>
+  `;
+
+  const sortedLoads = [...allLoads].sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`));
+  document.getElementById("reportTableBody").innerHTML = sortedLoads.map(load => {
+    const totals = calculatePieceTotals(load.pieces || []);
+    const util = calculateUtilization(getVehicle(load.vehicleId), load.pieces || []);
+    const status = getLoadStatus(load);
+    const pct = Math.max(util.weight, util.space);
+    return `<tr>
+      <td><div class="cell-title">${formatDate(load.date, { year: true })}</div><div class="cell-subtitle">${formatTime(load.time)}</div></td>
+      <td><div class="cell-title">${escapeHtml(load.job)}</div><div class="cell-subtitle">${escapeHtml(load.destination)}</div></td>
+      <td>${escapeHtml(getVehicle(load.vehicleId)?.name || "Not assigned")}</td>
+      <td>${Math.round(totals.weight).toLocaleString()} lb</td>
+      <td><div style="display:flex;align-items:center;gap:7px"><span class="util-bar" style="width:70px"><span class="util-fill ${pct > 100 ? "danger" : pct >= 85 ? "warning" : ""}" style="display:block;width:${Math.min(100, pct)}%"></span></span><strong>${pct}%</strong></div></td>
+      <td><span class="badge ${status.className}">${status.label}</span></td>
+    </tr>`;
+  }).join("");
+  document.getElementById("reportEmpty").innerHTML = sortedLoads.length ? "" : emptyState("No movement history", "Saved load plans will appear in this report.");
+}
+
+function renderSettings() {
+  document.getElementById("companyName").value = state.settings.companyName || "";
+  document.getElementById("companyPhone").value = state.settings.companyPhone || "";
+  document.getElementById("companyAddress").value = state.settings.companyAddress || "";
+  document.getElementById("defaultDriver").value = state.settings.defaultDriver || "";
+  const vehicleSelect = document.getElementById("defaultVehicle");
+  vehicleSelect.innerHTML = state.vehicles.map(vehicle => `<option value="${escapeHtml(vehicle.id)}">${escapeHtml(vehicle.name)}</option>`).join("");
+  vehicleSelect.value = state.settings.defaultVehicle || state.vehicles[0]?.id || "";
+  document.getElementById("distanceUnit").value = state.settings.distanceUnit || "mi";
+  document.getElementById("weekStart").value = state.settings.weekStart || "sunday";
+  document.getElementById("weightThreshold").value = state.settings.weightThreshold || 85;
+  document.getElementById("spaceThreshold").value = state.settings.spaceThreshold || 85;
+}
+
+function renderNotifications() {
+  const unread = state.notifications.filter(item => !item.read).length;
+  document.getElementById("notificationDot").style.display = unread ? "block" : "none";
+  document.getElementById("notificationList").innerHTML = state.notifications.length ? state.notifications.map(item => {
+    const icon = item.type === "warning"
+      ? '<path d="M12 3L2 21h20L12 3z"></path><path d="M12 9v5M12 18h.01"></path>'
+      : '<circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path>';
+    return `<div class="alert-item"><div class="alert-icon ${item.type === "warning" ? "warning" : "info"}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg></div><div><div class="alert-title">${escapeHtml(item.title)}</div><div class="alert-text">${escapeHtml(item.message)}</div>${!item.read ? '<span class="badge badge-info" style="margin-top:6px">New</span>' : ""}</div></div>`;
+  }).join("") : `<div class="empty-state" style="padding:30px 10px"><div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"></path></svg></div><h3>You're all caught up</h3><p>New planning issues will appear here.</p></div>`;
+}
+
+function renderAll() {
+  renderDashboard();
+  renderPlanner();
+  renderSchedule();
+  renderEquipment();
+  renderReports();
+  renderSettings();
+  renderNotifications();
+  document.getElementById("scheduleBadge").textContent = state.deliveries.filter(delivery => delivery.status !== "complete").length;
+}
+
+function downloadFile(filename, content, type = "text/plain;charset=utf-8") {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 500);
+}
+
+function csvEscape(value) {
+  const text = String(value ?? "");
+  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function exportLoadsCsv(filename = "tooling-move-loads.csv") {
+  const headers = ["Date", "Time", "Job", "Destination", "Vehicle", "Driver", "Weight (lb)", "Cargo volume (ft3)", "Space used (%)", "Weight used (%)", "Status"];
+  const rows = state.loads.map(load => {
+    const totals = calculatePieceTotals(load.pieces || []);
+    const util = calculateUtilization(getVehicle(load.vehicleId), load.pieces || []);
+    return [
+      load.date,
+      load.time,
+      load.job,
+      load.destination,
+      getVehicle(load.vehicleId)?.name || "",
+      load.driver,
+      totals.weight,
+      totals.volume,
+      util.space,
+      util.weight,
+      getLoadStatus(load).label
+    ];
+  });
+  const csv = [headers, ...rows].map(row => row.map(csvEscape).join(",")).join("\n");
+  downloadFile(filename, csv, "text/csv;charset=utf-8");
+  showToast("Export ready", `${rows.length} load records were exported.`);
+}
+
+function bindEvents() {
+  document.querySelectorAll(".nav-item[data-view]").forEach(button => {
+    button.addEventListener("click", () => switchView(button.dataset.view));
+  });
+  document.querySelectorAll("[data-view-jump]").forEach(button => {
+    button.addEventListener("click", () => switchView(button.dataset.viewJump));
+  });
+  document.querySelectorAll("[data-open-modal]").forEach(button => {
+    button.addEventListener("click", () => openModal(button.dataset.openModal));
+  });
+  document.querySelectorAll("[data-close-modal]").forEach(button => {
+    button.addEventListener("click", () => closeModal(button.closest(".modal-backdrop")));
+  });
+  document.querySelectorAll(".modal-backdrop").forEach(backdrop => {
+    backdrop.addEventListener("mousedown", event => {
+      if (event.target === backdrop) closeModal(backdrop);
+    });
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      const open = document.querySelector(".modal-backdrop.open");
+      if (open) closeModal(open);
+      else closeSidebar();
+    }
+  });
+
+  document.getElementById("mobileMenu").addEventListener("click", () => {
+    document.getElementById("sidebar").classList.add("open");
+    document.getElementById("mobileOverlay").classList.add("open");
+  });
+  document.getElementById("mobileOverlay").addEventListener("click", closeSidebar);
+
+  document.getElementById("addPiece").addEventListener("click", addPiece);
+  document.getElementById("pieceList").addEventListener("click", event => {
+    const button = event.target.closest("[data-remove-piece]");
+    if (button) removePiece(Number(button.dataset.removePiece));
+  });
+  document.getElementById("pieceList").addEventListener("input", event => {
+    const field = event.target.closest(".piece-field");
+    if (!field) return;
+    const row = field.closest(".piece-row");
+    const index = Number(row.dataset.index);
+    const key = field.dataset.key;
+    plannerPieces[index][key] = key === "name" ? field.value : Number(field.value) || 0;
+    updateLoadSummary();
+    renderVehicleOptions();
+    saveState();
+  });
+  document.getElementById("vehicleOptions").addEventListener("change", event => {
+    if (!event.target.matches("input[name='vehicle']")) return;
+    state.plannerDraft.vehicleId = event.target.value;
+    renderVehicleOptions();
+    updateLoadSummary();
+    saveState();
+  });
+  ["loadJob", "loadDestination", "loadDate", "loadTime", "loadPriority", "loadDriver", "loadNotes"].forEach(id => {
+    document.getElementById(id).addEventListener("input", () => {
+      syncPlannerDraft();
+      saveState();
+    });
+    document.getElementById(id).addEventListener("change", () => {
+      syncPlannerDraft();
+      saveState();
+    });
+  });
+  document.getElementById("saveLoadPlan").addEventListener("click", saveLoadPlan);
+  document.getElementById("clearPlanner").addEventListener("click", clearPlanner);
+
+  document.getElementById("quickLoadForm").addEventListener("submit", event => {
+    event.preventDefault();
+    const job = document.getElementById("quickJob").value.trim();
+    const destination = document.getElementById("quickDestination").value.trim();
+    const date = document.getElementById("quickDate").value;
+    const error = document.getElementById("quickLoadError");
+    document.getElementById("quickJobError").textContent = job ? "" : "Enter a job or work order.";
+    document.getElementById("quickDestinationError").textContent = destination ? "" : "Enter the destination site.";
+    document.getElementById("quickDateError").textContent = date ? "" : "Choose a delivery date.";
+    document.getElementById("quickJob").classList.toggle("error", !job);
+    document.getElementById("quickDestination").classList.toggle("error", !destination);
+    document.getElementById("quickDate").classList.toggle("error", !date);
+    if (!job || !destination || !date) {
+      error.textContent = "Complete the required fields before creating the load.";
+      error.classList.add("visible");
+      return;
+    }
+    error.classList.remove("visible");
+    state.plannerDraft.job = job;
+    state.plannerDraft.destination = destination;
+    state.plannerDraft.date = date;
+    state.plannerDraft.time = document.getElementById("quickTime").value || "08:00";
+    state.plannerDraft.driver = state.settings.defaultDriver || "";
+    state.plannerDraft.vehicleId = state.settings.defaultVehicle || state.vehicles[0]?.id || "";
+    state.plannerDraft.priority = "standard";
+    state.plannerDraft.notes = "";
+    const material = document.getElementById("quickMaterial").value.trim();
+    if (material) {
+      plannerPieces.push({ id: uid("piece"), name: material, length: 0, width: 0, height: 0, weight: 0, quantity: 1 });
+    }
+    saveState();
+    closeModal(document.getElementById("loadModal"));
+    event.target.reset();
+    document.getElementById("quickDate").value = isoDate(new Date());
+    renderPlanner();
+    switchView("planner");
+    showToast("Load created", "Add dimensions and weight to finish the capacity check.");
+  });
+
+  document.getElementById("deliveryForm").addEventListener("submit", event => {
+    event.preventDefault();
+    const job = document.getElementById("deliveryJob").value.trim();
+    const address = document.getElementById("deliveryAddress").value.trim();
+    const date = document.getElementById("deliveryDate").value;
+    const time = document.getElementById("deliveryTime").value;
+    const error = document.getElementById("deliveryError");
+    let valid = true;
+    [["deliveryJob", job], ["deliveryAddress", address], ["deliveryDate", date]].forEach(([id, value]) => {
+      const input = document.getElementById(id);
+      const errorElement = document.getElementById(`${id}Error`);
+      input.classList.toggle("error", !value);
+      errorElement.textContent = value ? "" : "This field is required.";
+      if (!value) valid = false;
+    });
+    if (!time) valid = false;
+    if (!valid) {
+      error.textContent = "Complete the required delivery details.";
+      error.classList.add("visible");
+      return;
+    }
+    error.classList.remove("visible");
+    const delivery = {
+      id: uid("delivery"),
+      job,
+      address,
+      date,
+      time,
+      crew: document.getElementById("deliveryCrew").value,
+      material: document.getElementById("deliveryMaterial").value.trim(),
+      notes: document.getElementById("deliveryNotes").value.trim(),
+      status: "scheduled"
+    };
+    state.deliveries.push(delivery);
+    saveState();
+    renderAll();
+    closeModal(document.getElementById("deliveryModal"));
+    event.target.reset();
+    document.getElementById("deliveryDate").value = isoDate(new Date());
+    document.getElementById("deliveryTime").value = "09:00";
+    showToast("Delivery scheduled", `${delivery.job} was added to the calendar.`);
+  });
+
+  document.getElementById("equipmentForm").addEventListener("submit", event => {
+    event.preventDefault();
+    const equipmentName = document.getElementById("requestEquipment").value;
+    const type = document.getElementById("requestType").value;
+    const date = document.getElementById("requestDate").value;
+    const location = document.getElementById("requestLocation").value.trim();
+    const error = document.getElementById("equipmentError");
+    if (!equipmentName || !date || !location) {
+      error.textContent = "Equipment, needed date, and transfer location are required.";
+      error.classList.add("visible");
+      return;
+    }
+    error.classList.remove("visible");
+    const inventoryItem = state.equipment.find(item => item.name === equipmentName);
+    const estimatedCost = type === "rental" ? Number(inventoryItem?.dailyRate || 0) : 0;
+    state.equipmentRequests.unshift({
+      id: uid("request"),
+      equipmentName,
+      type,
+      date,
+      location,
+      notes: document.getElementById("requestNotes").value.trim(),
+      estimatedCost,
+      status: "requested",
+      createdAt: new Date().toISOString()
+    });
+    if (type === "transfer" && inventoryItem) {
+      inventoryItem.status = "transfer";
+      inventoryItem.location = location;
+    }
+    saveState();
+    renderAll();
+    closeModal(document.getElementById("equipmentModal"));
+    event.target.reset();
+    document.getElementById("requestDate").value = isoDate(new Date());
+    showToast("Equipment request created", `${equipmentName} was added to the request queue.`);
+  });
+
+  document.getElementById("equipmentRecommendations").addEventListener("click", event => {
+    const button = event.target.closest(".equipment-request");
+    if (!button) return;
+    const name = button.dataset.equipmentName;
+    const item = state.equipment.find(entry => entry.name === name);
+    document.getElementById("requestEquipment").value = item?.name || name;
+    document.getElementById("requestType").value = button.dataset.equipmentType === "Transfer" ? "transfer" : "rental";
+    document.getElementById("requestDate").value = isoDate(new Date());
+    openModal("equipmentModal");
+  });
+  document.getElementById("equipmentTableBody").addEventListener("click", event => {
+    const button = event.target.closest(".equipment-request");
+    if (!button) return;
+    const item = state.equipment.find(entry => entry.name === button.dataset.equipmentName);
+    document.getElementById("requestEquipment").value = button.dataset.equipmentName;
+    document.getElementById("requestType").value = item?.source === "owned" ? "transfer" : "rental";
+    document.getElementById("requestDate").value = isoDate(new Date());
+    openModal("equipmentModal");
+  });
+
+  document.getElementById("scheduleMode").addEventListener("click", event => {
+    const button = event.target.closest("[data-schedule-mode]");
+    if (!button) return;
+    scheduleMode = button.dataset.scheduleMode;
+    document.querySelectorAll("[data-schedule-mode]").forEach(item => item.classList.toggle("active", item === button));
+    document.getElementById("scheduleTimelineCard").style.display = scheduleMode === "timeline" ? "block" : "none";
+    document.getElementById("scheduleCalendarCard").style.display = scheduleMode === "calendar" ? "block" : "none";
+  });
+  document.getElementById("calendarPrev").addEventListener("click", () => {
+    calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() - 1, 1);
+    renderCalendars();
+    saveState();
+  });
+  document.getElementById("calendarNext").addEventListener("click", () => {
+    calendarCursor = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth() + 1, 1);
+    renderCalendars();
+    saveState();
+  });
+  document.getElementById("equipmentFilter").addEventListener("click", event => {
+    const button = event.target.closest("[data-equipment-filter]");
+    if (!button) return;
+    equipmentFilter = button.dataset.equipmentFilter;
+    document.querySelectorAll("[data-equipment-filter]").forEach(item => item.classList.toggle("active", item === button));
+    renderEquipment();
+  });
+
+  document.getElementById("settingsForm").addEventListener("submit", event => {
+    event.preventDefault();
+    const companyName = document.getElementById("companyName").value.trim();
+    const error = document.getElementById("settingsError");
+    document.getElementById("companyNameError").textContent = companyName ? "" : "Company name is required.";
+    document.getElementById("companyName").classList.toggle("error", !companyName);
+    if (!companyName) {
+      error.textContent = "Enter a company name before saving settings.";
+      error.classList.add("visible");
+      return;
+    }
+    error.classList.remove("visible");
+    state.settings.companyName = companyName;
+    state.settings.companyPhone = document.getElementById("companyPhone").value.trim();
+    state.settings.companyAddress = document.getElementById("companyAddress").value.trim();
+    state.settings.defaultDriver = document.getElementById("defaultDriver").value;
+    state.settings.defaultVehicle = document.getElementById("defaultVehicle").value;
+    state.settings.distanceUnit = document.getElementById("distanceUnit").value;
+    state.settings.weekStart = document.getElementById("weekStart").value;
+    saveState();
+    showToast("Settings saved", "Company profile and planning defaults were updated.");
+  });
+
+  document.getElementById("saveThresholds").addEventListener("click", () => {
+    state.settings.weightThreshold = Number(document.getElementById("weightThreshold").value);
+    state.settings.spaceThreshold = Number(document.getElementById("spaceThreshold").value);
+    saveState();
+    renderAll();
+    showToast("Thresholds saved", "Capacity warnings will use the new limits.");
+  });
+
+  document.getElementById("backupData").addEventListener("click", () => {
+    const backup = {
+      exportedAt: new Date().toISOString(),
+      application: "Tooling Move Planner",
+      data: state
+    };
+    downloadFile(`tooling-move-backup-${isoDate(new Date())}.json`, JSON.stringify(backup, null, 2), "application/json");
+    showToast("Backup downloaded", "A JSON copy of your workspace was saved.");
+  });
+
+  document.getElementById("resetData").addEventListener("click", () => {
+    confirmAction("Reset all workspace data?", "This permanently removes every saved load, delivery, equipment request, and setting from this browser.", () => {
+      localStorage.removeItem(STORAGE_KEY);
+      state = getDefaultState();
+      plannerPieces = [];
+      calendarCursor = new Date();
+      saveState();
+      renderAll();
+      switchView("dashboard");
+      showToast("Workspace reset", "Seed data has been restored.");
+    });
+  });
+
+  document.getElementById("confirmAction").addEventListener("click", () => {
+    if (pendingConfirmAction) pendingConfirmAction();
+    pendingConfirmAction = null;
+    closeModal(document.getElementById("confirmModal"));
+  });
+
+  document.getElementById("notificationButton").addEventListener("click", () => openModal("notificationPanel"));
+  document.getElementById("markNotificationsRead").addEventListener("click", () => {
+    state.notifications.forEach(item => item.read = true);
+    saveState();
+    renderNotifications();
+    showToast("Notifications cleared", "All notifications were marked as read.");
+  });
+
+  document.getElementById("printButton").addEventListener("click", () => window.print());
+  document.getElementById("printReport").addEventListener("click", () => window.print());
+  document.getElementById("exportDashboard").addEventListener("click", () => exportLoadsCsv());
+  document.getElementById("exportReport").addEventListener("click", () => exportLoadsCsv(`tooling-move-report-${isoDate(new Date())}.csv`));
+  document.getElementById("compareEquipment").addEventListener("click", () => {
+    showToast("Comparison ready", "Recommendations are ranked by weight, dimensions, availability, and cost.");
+    switchView("equipment");
+  });
+
+  document.getElementById("globalSearch").addEventListener("input", event => {
+    const query = event.target.value.trim().toLowerCase();
+    if (!query) return;
+    const matches = [];
+    state.loads.forEach(load => {
+      if (`${load.job} ${load.destination} ${load.driver || ""}`.toLowerCase().includes(query)) matches.push({ type: "load", label: load.job, detail: load.destination, view: "planner" });
+    });
+    state.deliveries.forEach(delivery => {
+      if (`${delivery.job} ${delivery.address} ${delivery.crew || ""}`.toLowerCase().includes(query)) matches.push({ type: "delivery", label: delivery.job, detail: delivery.address, view: "schedule" });
+    });
+    state.equipment.forEach(item => {
+      if (`${item.name} ${item.type} ${item.location}`.toLowerCase().includes(query)) matches.push({ type: "equipment", label: item.name, detail: item.location, view: "equipment" });
+    });
+    if (matches.length) {
+      const first = matches[0];
+      showToast(`${matches.length} result${matches.length === 1 ? "" : "s"}`, `Top match: ${first.label} — ${first.detail}`);
+    }
+  });
+
+  document.getElementById("quickDate").value = isoDate(new Date());
+  document.getElementById("deliveryDate").value = isoDate(new Date());
+  document.getElementById("requestDate").value = isoDate(new Date());
+}
+
+function initialize() {
+  plannerPieces = deepCopy(state.plannerDraft.pieces || []);
+  const cursorParts = (state.calendarCursor || isoDate(new Date())).split("-");
+  calendarCursor = new Date(Number(cursorParts[0]), Number(cursorParts[1]) - 1, 1);
+  bindEvents();
+  renderAll();
+  switchView(VIEWS.includes(state.lastView) ? state.lastView : "dashboard");
+}
+
+initialize();
+</script>
+</body>
+</html>
